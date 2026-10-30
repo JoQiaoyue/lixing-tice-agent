@@ -1,0 +1,208 @@
+// 冒烟测试：用 DOM 打桩在 Node 中执行 index.html 内的脚本
+const fs = require('fs');
+const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
+const htmlSrc = html;
+const code = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+
+const store = {};
+function el(id) {
+  if (!store[id]) store[id] = {
+    id, value: '', textContent: '', innerHTML: '', style: {}, dataset: {},
+    classList: (function(){ const c = new Set(); return { add:(x)=>c.add(x), remove:(x)=>c.delete(x), toggle:(x)=>(c.has(x)?c.delete(x):c.add(x)), contains:(x)=>c.has(x) }; })(),
+    addEventListener(){}, scrollIntoView(){}, parentElement:null
+  };
+  return store[id];
+}
+const doc = {
+  getElementById: el,
+  querySelectorAll: () => [],
+  createElement: () => el('_tmp')
+};
+const sandbox = {
+  document: doc,
+  localStorage: (() => { const m = {}; return { getItem: k => (k in m ? m[k] : null), setItem: (k,v) => { m[k]=String(v); }, removeItem: k => { delete m[k]; } }; })(),
+  window: { scrollTo(){}, __natRows: null, __courseRows: null },
+  console,
+  alert: m => console.log('ALERT:', m),
+  setTimeout: (fn, t) => { try { fn(); } catch(e){} },
+  clearTimeout: () => {}
+};
+const vm = require('vm');
+vm.createContext(sandbox);
+sandbox.globalThis = sandbox;
+// 脚本内的 const 声明位于词法作用域，需显式导出才能访问
+vm.runInContext(code + '\n;globalThis.__X={NAT,COURSE,scoreFrom,parseTime,fmtTime,buildInputs,runAssess,genPlanUI,addRecord,getRecs,setTrack:(v)=>{track=v},getTrack:()=>track,doRegister,doLogin,doLogout,getUsers,saveProfile,loadProfile,renderTipTexts,renderTipVideos};', sandbox);
+// ---- 断言工具 ----
+let pass = 0, fail = 0;
+function ok(name, cond, extra='') {
+  cond ? (pass++, console.log('  ✓ ' + name)) : (fail++, console.log('  ✗ ' + name + ' ' + extra));
+}
+
+console.log('\n[1] 评分引擎校验（国家标准，大一大二男生）');
+const S = Object.assign({}, sandbox, sandbox.__X);
+ok('肺活量 5200ml → 100分', S.scoreFrom(S.NAT.m.lung, 5200, 0) === 100, S.scoreFrom(S.NAT.m.lung,5200,0));
+ok('肺活量 3100ml → 60分', S.scoreFrom(S.NAT.m.lung, 3100, 0) === 60, S.scoreFrom(S.NAT.m.lung,3100,0));
+ok('1000米 4:32(272s) → 60分', S.scoreFrom(S.NAT.m.runLD, 272, 0) === 60, S.scoreFrom(S.NAT.m.runLD,272,0));
+ok('1000米 3:17(197s) → 100分', S.scoreFrom(S.NAT.m.runLD, 197, 0) === 100);
+ok('1000米 5:00(300s) → 40分档', S.scoreFrom(S.NAT.m.runLD, 300, 0) <= 50);
+ok('引体向上 10个 → 62分(国标62/60同为10个,取高)', S.scoreFrom(S.NAT.m.pull, 10, 0) === 62, S.scoreFrom(S.NAT.m.pull,10,0));
+ok('立定跳远 208cm → 60分', S.scoreFrom(S.NAT.m.jump, 208, 0) === 60);
+ok('50米 9.1s → 60分', S.scoreFrom(S.NAT.m.run50, 9.1, 0) === 60);
+ok('坐位体前屈 3.7cm → 60分', S.scoreFrom(S.NAT.m.sitr, 3.7, 0) === 60);
+
+console.log('\n[2] 女生 / 大三大四标准');
+ok('800米 4:34(274s) 女大一大二 → 60分', S.scoreFrom(S.NAT.f.runLD, 274, 0) === 60, S.scoreFrom(S.NAT.f.runLD,274,0));
+ok('仰卧起坐 26个 → 60分', S.scoreFrom(S.NAT.f.situp, 26, 0) === 60);
+ok('仰卧起坐 27个(大三大四) → 60分', S.scoreFrom(S.NAT.f.situp, 27, 1) === 60);
+ok('立定跳远 151cm 女 → 60分', S.scoreFrom(S.NAT.f.jump, 151, 0) === 60);
+ok('肺活量 2000ml 女 → 60分', S.scoreFrom(S.NAT.f.lung, 2000, 0) === 60);
+
+console.log('\n[3] 校内课程考核表');
+ok('2400米 10:30(630s) → 28分', S.scoreFrom(S.COURSE.endur.m, 630, 0) === 28);
+ok('2400米 12:30(750s) → 20分', S.scoreFrom(S.COURSE.endur.m, 750, 0) === 20);
+ok('立定跳远 207cm 女课程 → 20分', S.scoreFrom(S.COURSE.jump.f, 207, 0) === 20);
+ok('50米 9.5s 女课程 → 10分', S.scoreFrom(S.COURSE.run50.f, 9.5, 0) === 10);
+ok('4×10折返 12.6s 女 → 10分', S.scoreFrom(S.COURSE.shuttle.f, 12.6, 0) === 10);
+
+console.log('\n[4] 时间解析');
+ok("parseTime('4:32') = 272", S.parseTime('4:32') === 272, S.parseTime('4:32'));
+ok("parseTime(\"3'22\") = 202", S.parseTime("3'22") === 202, S.parseTime("3'22"));
+ok('fmtTime(272) = 4\'32"', S.fmtTime(272) === "4'32\"", S.fmtTime(272));
+
+ok("parseTime('9:97') 视作 9.97 秒", S.parseTime('9:97') === 9.97, S.parseTime('9:97'));
+ok('50米 9.97秒 → 10分（原bug返回0）', S.scoreFrom(S.NAT.m.run50, 9.97, 0) === 10, S.scoreFrom(S.NAT.m.run50,9.97,0));
+ok('50米 10:30 正常按分秒=630秒', S.parseTime('10:30') === 630, S.parseTime('10:30'));
+ok('50米 11.5秒 → 0分(低于最低档)', S.scoreFrom(S.NAT.m.run50, 11.5, 0) === 0, S.scoreFrom(S.NAT.m.run50,11.5,0));
+
+console.log('\n[5] 完整测评流程（2026级男生·标准班）');
+// 填表
+el('f-grade').value = 'g2026'; el('f-gender').value = 'm';
+el('f-height').value = '175'; el('f-weight').value = '65';
+el('f-target').value = '80'; el('f-date').value = '2026-11-20';
+el('f-usual').value = '85';
+el('in-lung').value = '4200'; el('in-run50').value = '7.6';
+el('in-sitr').value = '12'; el('in-jump').value = '225';
+el('in-pull').value = '8'; el('in-runLD').value = '4:20';
+el('ci-endur').value = '10:40'; el('ci-jump').value = '225';
+el('ci-run50').value = '7.6'; el('ci-shuttle').value = '10.6';
+S.buildInputs();
+let err = null;
+try { S.runAssess(); } catch (e) { err = e; }
+ok('runAssess 无异常', !err, err && err.message);
+const nat = S.window.__natPred;
+ok('预测总分在合理区间 55-85', nat > 55 && nat < 85, '实得 ' + nat);
+ok('单项记录数 = 7', (S.window.__natRows || []).length === 7, (S.window.__natRows||[]).length);
+ok('弱项诊断已渲染', /弱项诊断/.test(el('result-area').innerHTML));
+ok('课程身体素质预测已渲染', /课程身体素质部分预测/.test(el('result-area').innerHTML));
+ok('不再显示平时成绩', !/平时成绩/.test(el('result-area').innerHTML));
+
+console.log('\n[6] 训练计划生成（周/日切换 + 性价比）');
+let e2 = null;
+el('f-date').value = '2026-11-05'; // 距今6天 ≤2周 → 日计划
+try { S.genPlanUI(); } catch (e) { e2 = e; }
+ok('genPlanUI 无异常', !e2, e2 && e2.message);
+const plan = el('plan-area').innerHTML;
+// 默认日期 2026-11-05，距今天6天 ≤2周 → 日计划
+ok('≤2周输出日计划', /逐日计划/.test(plan) && /第 1 天/.test(plan), plan.slice(0,120));
+ok('日计划含性价比排名', /性价比/.test(plan));
+// 改为 >2 周 → 周计划
+el('f-date').value = '2026-12-20';
+try { S.genPlanUI(); } catch (e) { e2 = e; }
+ok('周计划无异常', !e2, e2 && e2.message);
+const plan2 = el('plan-area').innerHTML;
+ok('>2周输出周计划', /周专属计划/.test(plan2) && /第 1 周/.test(plan2));
+// 保健班
+S.setTrack('health');
+try { S.genPlanUI(); } catch (e) { e2 = e; }
+ok('保健班计划生成', /体育保健班专属计划/.test(el('plan-area').innerHTML));
+// 提升班
+S.setTrack('fit');
+try { S.genPlanUI(); } catch (e) { e2 = e; }
+ok('提升训练班减重模式计划', /减重/.test(el('plan-area').innerHTML));
+S.setTrack('std');
+
+console.log('\n[7] 其它年级');
+['g2025','g2024','g2026f'].forEach(g => {
+  el('f-grade').value = g; el('f-spec').value = '88';
+  S.buildInputs();
+  let e3 = null;
+  try { S.runAssess(); S.genPlanUI(); } catch (e) { e3 = e; }
+  ok(g + ' 测评+计划无异常', !e3, e3 && e3.message);
+});
+
+console.log('\n[8] 成绩档案（含账号登录）');
+el('lg-phone').value = '13800000000'; el('lg-name').value = '测试用户'; el('lg-pwd').value = '123456';
+S.doRegister();
+ok('注册并登录成功', /13800000000/.test(el('userbar').innerHTML), el('userbar').innerHTML);
+ok('登录遮罩已隐藏', el('login-mask').classList.contains('hide'));
+ok('密码加密存储（无明文）', !/123456/.test(JSON.stringify(S.getUsers())), JSON.stringify(S.getUsers()).slice(0,80));
+el('lg-pwd').value = '000000'; S.doLogin();
+ok('错误密码无法登录', /密码不正确/.test(el('lg-msg').innerHTML));
+el('lg-pwd').value = '123456'; S.doLogin();
+ok('正确密码可再次登录', /13800000000/.test(el('userbar').innerHTML));
+el('r-date').value = '2026-10-01'; el('r-total').value = '68'; S.addRecord();
+el('r-date').value = '2026-10-15'; el('r-total').value = '72.5'; S.addRecord();
+el('r-date').value = '2026-10-29'; el('r-total').value = '75'; S.addRecord();
+ok('考前须知妙招视频已渲染', /bilibili/.test(el('tips-videos').innerHTML) && /bilibili/.test(el('warmup-videos').innerHTML));
+ok('3条记录已保存', S.getRecs().length === 3, S.getRecs().length);
+ok('趋势图已绘制', /polyline|path/.test(el('chart').innerHTML));
+ok('历史列表已渲染', /2026-10-15/.test(el('rec-list').innerHTML));
+
+console.log('\n[8b] 成绩档案：分项目记录与分项目折线图');
+// 分项目录入（立定跳远、50米）
+el('f-gender').value = 'm'; el('f-grade').value = 'g2026'; S.buildInputs(); S.buildRecInputs();
+el('r-date').value = '2026-11-01'; el('rc-nat-jump').value = '220'; el('rc-nat-run50').value = '7.9'; S.addRecord();
+el('r-date').value = '2026-11-08'; el('rc-nat-jump').value = '228'; el('rc-nat-run50').value = '7.6'; S.addRecord();
+const recs2 = S.getRecs();
+const last2 = recs2[recs2.length-1];
+ok('分项数据已保存(kv)', !!last2.kv && last2.kv['nat-jump'] === 228, JSON.stringify(last2.kv));
+ok('未填总分时自动计算', last2.t !== null && last2.t > 40 && last2.t < 100, last2.t);
+ok('项目切换按钮已生成', /chart-pick|total/.test(el('chart-pick').innerHTML) && /nat-jump/.test(el('chart-pick').innerHTML));
+S.pickMetric('nat-jump');
+ok('立定跳远折线图已绘制', /path/.test(el('chart').innerHTML) && /228/.test(el('chart').innerHTML));
+ok('立定跳远趋势表已渲染', /立定跳远/.test(el('chart-table').innerHTML) && /228/.test(el('chart-table').innerHTML));
+S.pickMetric('nat-run50');
+ok('50米折线图(越低越好)已绘制', /path/.test(el('chart').innerHTML) && /下降＝进步/.test(el('chart-legend').innerHTML));
+S.pickMetric('total');
+ok('总分折线图含等级参考线', /优秀/.test(el('chart').innerHTML));
+
+console.log('\n[9] 动作教室与须知');
+el('f-gender').value = 'm'; S.renderSkills(); // stub 中 select 无默认值，显式设男
+ok('动作教室按性别显示7项(男)', (el('skill-area').innerHTML.match(/class="acc"/g) || []).length === 7,
+   (el('skill-area').innerHTML.match(/class="acc"/g) || []).length);
+ok('含教学视频入口', /search\.bilibili\.com/.test(el('skill-area').innerHTML));
+ok('含上传AI分析区', /upzone/.test(el('skill-area').innerHTML));
+ok('纠错条目齐全', (el('skill-area').innerHTML.match(/class="fix"/g) || []).length >= 26);
+// 切换性别 → 项目过滤
+el('f-gender').value = 'f';
+S.buildInputs(); S.renderSkills(); S.renderTipVideos();
+const sk = el('skill-area').innerHTML;
+ok('女生视角无引体向上', !/引体向上（男）/.test(sk));
+ok('女生视角有仰卧起坐', /仰卧起坐/.test(sk));
+ok('女生输入区无引体输入框', !/id="in-pull"/.test(el('nat-inputs').innerHTML) && /id="in-situp"/.test(el('nat-inputs').innerHTML));
+el('f-gender').value = 'm';
+S.buildInputs(); S.renderSkills(); S.renderTipVideos();
+ok('总览已删加分上限列', !/加分上限/.test(el('p-home').innerHTML));
+ok('考前须知顶部证件提醒', /切记需携带/.test(htmlSrc));
+
+console.log('\n[10] 账号数据记忆与隔离');
+const nA = S.getRecs().length;
+ok('账号A已有记录', nA >= 3, nA);
+el('lg-phone').value = '13900000000'; el('lg-name').value = '同学B'; el('lg-pwd').value = '654321';
+S.doRegister();
+ok('切换新账号后数据为空（隔离）', S.getRecs().length === 0, S.getRecs().length);
+el('r-date').value = '2026-11-10'; el('rc-nat-jump').value = '210'; S.addRecord();
+ok('新账号可独立记录', S.getRecs().length === 1, S.getRecs().length);
+el('lg-phone').value = '13800000000'; el('lg-name').value = '测试用户'; el('lg-pwd').value = '123456';
+S.doLogin();
+ok('回到账号A数据完整恢复', S.getRecs().length === nA, S.getRecs().length);
+// 档案记忆
+el('f-height').value = '180'; el('f-weight').value = '70'; el('f-gender').value = 'f';
+S.runAssess(); S.saveProfile();
+el('lg-phone').value = '13900000000'; el('lg-name').value = '同学B'; el('lg-pwd').value = '654321'; S.doLogin();
+el('lg-phone').value = '13800000000'; el('lg-name').value = '测试用户'; el('lg-pwd').value = '123456'; S.doLogin();
+ok('个人档案（身高/性别）已记忆', String(el('f-height').value) === '180' && el('f-gender').value === 'f',
+   el('f-height').value + '/' + el('f-gender').value);
+
+console.log(`\n结果：通过 ${pass} 项，失败 ${fail} 项\n`);
+process.exit(fail ? 1 : 0);

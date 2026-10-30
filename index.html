@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>砺行体测小管家 · AI智能体</title>
+<style>
+  :root{
+    --blue:#1e56a8; --blue-d:#14417f; --blue-l:#eaf2fc;
+    --red:#d8433a; --green:#2e9e5b; --orange:#e8890c;
+    --bg:#f4f7fb; --card:#ffffff; --line:#e3eaf3;
+    --text:#22314a; --muted:#6b7a93;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"YouYuan","幼圆","Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+  header{background:linear-gradient(135deg,#14417f,#1e56a8 55%,#2f74d0);color:#fff;padding:22px 16px 18px;text-align:center}
+  header h1{font-size:22px;letter-spacing:1px}
+  header p{font-size:12.5px;opacity:.85;margin-top:4px}
+  .wrap{max-width:900px;margin:0 auto;padding:14px 12px 60px}
+  nav{display:flex;gap:6px;overflow-x:auto;padding:10px 2px;position:sticky;top:0;background:var(--bg);z-index:9;border-bottom:1px solid var(--line)}
+  nav button{flex:0 0 auto;border:2px solid var(--line);background:#fff;border-radius:22px;padding:7px 14px;font-size:13.5px;color:var(--muted);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;transition:transform .15s} nav button:hover{transform:translateY(-2px)}
+  nav button.active{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:bold}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:16px;margin-top:14px;box-shadow:0 3px 10px rgba(20,65,127,.07)}
+  .card h2{font-size:16.5px;color:var(--blue-d);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .card h3{font-size:14.5px;color:var(--blue-d);margin:12px 0 6px}
+  .card ul{list-style:none;padding-left:6px}
+  .card ul li{position:relative;padding-left:14px;margin:4px 0}
+  .card ul li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:#b9cbe4}
+  .tag{display:inline-block;font-size:11.5px;padding:2px 9px;border-radius:10px;background:var(--blue-l);color:var(--blue);margin:2px 4px 2px 0}
+  .tag.warn{background:#fdeeee;color:var(--red)}
+  .tag.ok{background:#e9f7ef;color:var(--green)}
+  .tag.orange{background:#fdf3e4;color:var(--orange)}
+  .grid{display:grid;gap:10px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:640px){.g3{grid-template-columns:1fr 1fr}}
+  label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:3px}
+  input,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fbfdff;color:var(--text)}
+  input:focus,select:focus{outline:none;border-color:var(--blue)}
+  .btn{display:inline-block;border:none;border-radius:16px;padding:11px 22px;font-size:14.5px;cursor:pointer;background:var(--blue);color:#fff;font-weight:bold;box-shadow:0 3px 8px rgba(30,86,168,.25);transition:transform .15s} .btn:hover{transform:translateY(-2px)}
+  .btn.sec{background:#fff;color:var(--blue);border:1px solid var(--blue)}
+  .btn.sm{padding:6px 14px;font-size:13px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+  th{background:var(--blue-l);color:var(--blue-d);font-weight:bold}
+  tr:nth-child(even) td{background:#fafcff}
+  .score-big{font-size:40px;font-weight:800;color:var(--blue)}
+  .bar{height:9px;background:#e8eef7;border-radius:6px;overflow:hidden;margin-top:4px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#2f74d0,#1e56a8);border-radius:6px}
+  .item-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .item-row:last-child{border-bottom:none}
+  .item-row .nm{width:110px;font-size:13.5px;font-weight:bold;flex:0 0 auto}
+  .item-row .bar{flex:1;margin-top:0}
+  .item-row .sc{width:120px;text-align:right;font-size:12.5px;color:var(--muted);flex:0 0 auto}
+  .plan-week{border:2px solid var(--line);border-radius:16px;margin-top:12px;overflow:hidden}
+  .plan-week .hd{background:var(--blue);color:#fff;padding:9px 14px;font-size:14px;font-weight:bold;display:flex;justify-content:space-between;align-items:center}
+  .plan-week .hd .focus{font-size:12px;font-weight:normal;background:rgba(255,255,255,.22);padding:2px 10px;border-radius:10px}
+  .plan-week table td{text-align:left}
+  .acc{border:2px solid var(--line);border-radius:16px;margin-top:10px;overflow:hidden}
+  .acc .hd{padding:11px 14px;background:#fbfdff;cursor:pointer;font-size:14.5px;font-weight:bold;color:var(--blue-d);display:flex;justify-content:space-between}
+  .acc .bd{padding:0 14px;max-height:0;overflow:hidden;transition:max-height .3s}
+  .acc.open .bd{max-height:1200px;padding:6px 14px 14px}
+  .acc ul{padding-left:18px;font-size:13.5px}
+  .acc li{margin:4px 0}
+  .fix{background:#fff8f0;border-left:3px solid var(--orange);padding:8px 10px;border-radius:0 8px 8px 0;margin:6px 0;font-size:13px}
+  .tip{background:var(--blue-l);border-left:3px solid var(--blue);padding:8px 10px;border-radius:0 8px 8px 0;margin:6px 0;font-size:13px}
+  .warnbox{background:#fdeeee;border-left:3px solid var(--red);padding:8px 10px;border-radius:0 8px 8px 0;margin:6px 0;font-size:13px}
+  .hide{display:none}
+  .muted{color:var(--muted);font-size:12.5px}
+  .num-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:bold;margin-right:6px;flex:0 0 auto}
+  .rec-item{display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px dashed var(--line);font-size:13.5px}
+  svg.chart{width:100%;height:180px;background:#fbfdff;border:1px solid var(--line);border-radius:10px}
+  .legend{font-size:12px;color:var(--muted);margin-top:6px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px}
+  .kpi{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .kpi .k{flex:1;min-width:120px;background:#fbfdff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+  .kpi .k b{font-size:24px;color:var(--blue-d)}
+  .kpi .k span{display:block;font-size:12px;color:var(--muted)}
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+  .pill{border:1.5px solid var(--line);border-radius:18px;padding:6px 14px;font-size:13px;cursor:pointer;background:#fff;color:var(--muted)}
+  .pill.on{border-color:var(--blue);background:var(--blue);color:#fff;font-weight:bold}
+  a.pill{text-decoration:none;display:inline-block}
+  #login-mask{position:fixed;inset:0;background:linear-gradient(135deg,#14417f,#2f74d0);display:flex;align-items:center;justify-content:center;padding:16px;z-index:99}
+  #login-mask.hide{display:none}
+  .login-card{background:#fff;border-radius:24px;padding:22px 20px;width:100%;max-width:380px;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+  .lg-title{font-size:20px;font-weight:bold;color:var(--blue-d);display:flex;align-items:center;gap:8px}
+  #userbar{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:10px;font-size:12.5px;opacity:.95}
+  #userbar.hide{display:none}
+  #userbar .btn{padding:5px 12px;font-size:12px}
+  .ic{width:19px;height:19px;vertical-align:-3px;flex:0 0 auto}
+  .ic-lg{width:23px;height:23px}
+  .ib{display:inline-flex;align-items:center;justify-content:center;width:31px;height:31px;border-radius:11px;background:var(--blue-l);margin-right:8px;flex:0 0 auto}
+  @keyframes runbob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-4deg)}}
+  .h1-run{animation:runbob 1.7s ease-in-out infinite}
+  @keyframes runbob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-4deg)}}
+  .h1-run{animation:runbob 1.7s ease-in-out infinite}
+  .ib.o{background:#fdf3e4}.ib.g{background:#e9f7ef}.ib.r{background:#fdeeee}
+  .upzone{border:1.5px dashed #b9cbe4;border-radius:10px;padding:10px 12px;margin-top:8px;background:#fbfdff;font-size:13px}
+  .upzone video,.upzone img{max-width:100%;max-height:220px;border-radius:8px;margin-top:6px;display:block}
+  footer{text-align:center;font-size:11.5px;color:var(--muted);padding:20px 10px 30px}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5" fill="#ffe3c2" stroke="#14417f" stroke-width="2" stroke-linejoin="round"/><path d="M5.5 10.5V20h13v-9.5" fill="#fff" stroke="#14417f" stroke-width="2" stroke-linejoin="round"/><circle cx="9.6" cy="14" r="1.2" fill="#14417f"/><circle cx="14.4" cy="14" r="1.2" fill="#14417f"/><path d="M10 17.3c.9.8 3.1.8 4 0" stroke="#14417f" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="3.5" fill="#eaf2fc" stroke="#14417f" stroke-width="2"/><rect x="9" y="2.4" width="6" height="3.6" rx="1.6" fill="#fff" stroke="#14417f" stroke-width="2"/><path d="M8.6 12.4l2.3 2.3 4.7-4.7" fill="none" stroke="#2e9e5b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="4" fill="#fff3e0" stroke="#e8890c" stroke-width="2"/><path d="M3.5 10.2h17" stroke="#e8890c" stroke-width="2"/><path d="M8 3.4V6.6M16 3.4V6.6" stroke="#e8890c" stroke-width="2" stroke-linecap="round"/><circle cx="8.6" cy="14.6" r="1.4" fill="#e8890c"/><circle cx="12" cy="14.6" r="1.4" fill="#e8890c"/><circle cx="15.4" cy="14.6" r="1.4" fill="#e8890c"/></symbol>
+<symbol id="i-dumb" viewBox="0 0 24 24"><rect x="9.5" y="10" width="5" height="4" rx="2" fill="#1e56a8"/><rect x="4" y="7.4" width="4" height="9.2" rx="2" fill="#fff" stroke="#1e56a8" stroke-width="2"/><rect x="16" y="7.4" width="4" height="9.2" rx="2" fill="#fff" stroke="#1e56a8" stroke-width="2"/><path d="M12 3.6l.8 1.7 1.7.8-1.7.8-.8 1.7-.8-1.7-1.7-.8 1.7-.8z" fill="#e8890c"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.2c-1.2 0-2-1-2-2.2C4 10.2 6 9.2 6.6 6.7 7 5 8.2 3.6 12 3.6s5 1.4 5.4 3.1c.6 2.5 2.6 3.5 2.6 7.3 0 1.2-.8 2.2-2 2.2z" fill="#fdeeee" stroke="#d8433a" stroke-width="2" stroke-linejoin="round"/><path d="M10 18.6c.8.9 3.2.9 4 0" stroke="#d8433a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12 8.2v3.6" stroke="#d8433a" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="14.2" r="1" fill="#d8433a"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="3.5" fill="#f4f9ff" stroke="#1e56a8" stroke-width="2"/><path d="M6.6 16.2l3.6-4.2 3 2.4 4.6-6.6" fill="none" stroke="#d8433a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17.8" cy="7.8" r="1.7" fill="#d8433a"/></symbol>
+<symbol id="i-run" viewBox="0 0 24 24">
+<path d="M3.2 7.6h3.2M2.6 11h2.6M4.6 4.8h2.6" fill="none" stroke="#e8890c" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M11.6 12.8 8.4 15l-3.6 3" fill="none" stroke="#14417f" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.6 12.8 14.2 15.4l1.2 3.4" fill="none" stroke="#14417f" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.4 9.6 8.8 11.2" fill="none" stroke="#14417f" stroke-width="2" stroke-linecap="round"/>
+<path d="M13.2 8.2 11.6 12.8" fill="none" stroke="#14417f" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M12.2 9.2 14.4 9.5l-1.3 3.4-2.3-.5z" fill="#1e56a8"/>
+<path d="M12.8 9.4 16 7.6" fill="none" stroke="#14417f" stroke-width="2" stroke-linecap="round"/>
+<circle cx="14.6" cy="5.4" r="2.9" fill="#ffd9c7" stroke="#14417f" stroke-width="1.8"/>
+<path d="M12.3 4.4c.7-1.7 2.8-2.3 4.4-1.3" fill="none" stroke="#14417f" stroke-width="1.8" stroke-linecap="round"/>
+<circle cx="15.4" cy="5" r=".7" fill="#14417f"/>
+<path d="M15.6 6.6c.6.5 1.4.4 1.8-.1" fill="none" stroke="#14417f" stroke-width="1.4" stroke-linecap="round"/>
+</symbol>
+<symbol id="i-jump" viewBox="0 0 24 24"><circle cx="8.4" cy="6.8" r="2.6" fill="#ffd9c7" stroke="#1e56a8" stroke-width="1.8"/><circle cx="7.6" cy="6.4" r=".7" fill="#1e56a8"/><path d="M9 9.6l3 2 4 4M9 9.6 6 12.8l-1.6 4M12.6 11.8l2.6-.6" fill="none" stroke="#1e56a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14.6 20.2H22" stroke="#e8890c" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-sit" viewBox="0 0 24 24"><circle cx="7" cy="7.6" r="2.5" fill="#ffd9c7" stroke="#2e9e5b" stroke-width="1.8"/><circle cx="6.3" cy="7.2" r=".7" fill="#2e9e5b"/><path d="M8.2 10.6l5.8 1.4 4.8-1M8.2 10.6 6 14.6l5 1.4" fill="none" stroke="#2e9e5b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.6 19.4h15" stroke="#e8890c" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-pull" viewBox="0 0 24 24"><path d="M3 6h18" stroke="#1e56a8" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="10.2" r="2.6" fill="#ffd9c7" stroke="#1e56a8" stroke-width="1.8"/><circle cx="11.3" cy="9.8" r=".7" fill="#1e56a8"/><path d="M12 12.8v4.8M8.4 9.6 12 12.8l3.6-3.2M9.4 17.6 12 19.6l2.6-2" fill="none" stroke="#1e56a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-situp" viewBox="0 0 24 24"><path d="M3 19.4h18" stroke="#e8890c" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="8.8" r="2.5" fill="#ffd9c7" stroke="#d8433a" stroke-width="1.8"/><circle cx="7.3" cy="8.4" r=".7" fill="#d8433a"/><path d="M9.2 11.4l4 2.4 5-.6M9.6 11.4 8 17l5 1" fill="none" stroke="#d8433a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-lung" viewBox="0 0 24 24"><path d="M12 3.6c-2.6 3-3.6 5-3.6 6.8a3.6 3.6 0 0 0 7.2 0c0-1.8-1-3.8-3.6-6.8z" fill="#eaf2fc" stroke="#1e56a8" stroke-width="2" stroke-linejoin="round"/><path d="M12 14v3.4" stroke="#1e56a8" stroke-width="2" stroke-linecap="round"/><path d="M9.6 20.4c0-2.6 2.4-3.6 2.4-3.6s2.4 1 2.4 3.6z" fill="#fff" stroke="#1e56a8" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-sprint" viewBox="0 0 24 24"><path d="M13.6 3 6.6 13.2H12l-1.6 7.8L19 10.4h-5.4z" fill="#fdeeee" stroke="#d8433a" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-shuttle" viewBox="0 0 24 24"><path d="M3.6 9h13.2l-3-3.4M20.4 15H7.2l3 3.4" fill="none" stroke="#1e56a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3.5" fill="#fff3e0" stroke="#e8890c" stroke-width="2"/><circle cx="8.6" cy="11" r="2.2" fill="#ffd9c7" stroke="#e8890c" stroke-width="1.6"/><path d="M5.6 16.2c1-1.5 4.8-1.5 6 0" stroke="#e8890c" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M14 10.4h5M14 13.6h3" stroke="#e8890c" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 3c3.6 3.6 5.6 6.2 5.6 9.6A5.6 5.6 0 0 1 12 18.2a5.6 5.6 0 0 1-5.6-5.6C6.4 9.2 8.4 6.6 12 3z" fill="#fdeeee" stroke="#d8433a" stroke-width="2" stroke-linejoin="round"/><path d="M12 9.2c1.6 1.7 2.4 2.9 2.4 4.4A2.4 2.4 0 0 1 12 16a2.4 2.4 0 0 1-2.4-2.4c0-1.5.8-2.7 2.4-4.4z" fill="#ffb3a7"/></symbol>
+<symbol id="i-food" viewBox="0 0 24 24"><path d="M4 11.2h16c0 4.4-3.6 8-8 8s-8-3.6-8-8z" fill="#eaf2fc" stroke="#1e56a8" stroke-width="2" stroke-linejoin="round"/><path d="M8 7.4c0-1.6 1-2.1 1-3.6M12 7.4c0-1.9 1.2-2.4 1.2-4.2M16 7.4c0-1.6 1-2.1 1-3.6" stroke="#1e56a8" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M2.6 20.6h18.8" stroke="#1e56a8" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M12 3.2a6 6 0 0 1 3.6 10.8c-.6.5-.9 1.3-.9 2.1H9.3c0-.8-.3-1.6-.9-2.1A6 6 0 0 1 12 3.2z" fill="#fff3e0" stroke="#e8890c" stroke-width="2" stroke-linejoin="round"/><path d="M9.8 18.2h4.4M10.6 21h2.8" stroke="#e8890c" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><rect x="2.6" y="5" width="18.8" height="14" rx="4" fill="#eaf2fc" stroke="#1e56a8" stroke-width="2"/><path d="M10.4 9.4 15.6 12l-5.2 2.6z" fill="#d8433a"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="M12 17.4V6.6" stroke="#1e56a8" stroke-width="2" stroke-linecap="round"/><path d="M7.6 11 12 6.6 16.4 11" fill="none" stroke="#1e56a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.6 19.6h14.8" stroke="#1e56a8" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-medal" viewBox="0 0 24 24"><path d="M8 3.2 6 9.4l6 3 6-3-2-6.2" fill="none" stroke="#e8890c" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="15" r="5" fill="#fff3e0" stroke="#e8890c" stroke-width="2"/><path d="M12 12.6v4M10.4 14.6h3.2" stroke="#e8890c" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.6" cy="10.6" r="6.2" fill="#eaf2fc" stroke="#1e56a8" stroke-width="2"/><path d="M15.2 15.2 20.4 20.4" stroke="#1e56a8" stroke-width="2.4" stroke-linecap="round"/></symbol>
+<symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#fff3e0" stroke="#e8890c" stroke-width="2"/><circle cx="9.2" cy="10" r="1.2" fill="#e8890c"/><circle cx="14.8" cy="10" r="1.2" fill="#e8890c"/><path d="M8.4 13.8c.9 1.4 6.3 1.4 7.2 0" stroke="#e8890c" stroke-width="1.8" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="i-people" viewBox="0 0 24 24"><circle cx="8" cy="8.6" r="3" fill="#ffd9c7" stroke="#1e56a8" stroke-width="1.8"/><path d="M3 19.4c0-3 2.2-5.2 5-5.2s5 2.2 5 5.2" fill="none" stroke="#1e56a8" stroke-width="2" stroke-linecap="round"/><circle cx="16.6" cy="9.4" r="2.4" fill="#ffe3c2" stroke="#1e56a8" stroke-width="1.8"/><path d="M14.6 19.4c0-2.4 1.4-4.2 3.6-4.4 1.8-.2 3.2 1 3.8 2.6" fill="none" stroke="#1e56a8" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M6.5 3v18" fill="none" stroke="#14417f" stroke-width="2.2" stroke-linecap="round"/><path d="M6.5 4.4h11.5l-2.6 3.8 2.6 3.8H6.5z" fill="#fdeeee" stroke="#d8433a" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-classes" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.3" fill="#ffd9c7" stroke="#1e56a8" stroke-width="1.7"/><path d="M3.4 19.2c0-2.3 1.1-3.9 2.6-3.9s2.6 1.6 2.6 3.9" fill="none" stroke="#1e56a8" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="6.4" r="2.3" fill="#ffe3c2" stroke="#d8433a" stroke-width="1.7"/><path d="M9.4 18.6c0-2.3 1.1-3.9 2.6-3.9s2.6 1.6 2.6 3.9" fill="none" stroke="#d8433a" stroke-width="1.9" stroke-linecap="round"/><circle cx="18" cy="7" r="2.3" fill="#ffd9c7" stroke="#2e9e5b" stroke-width="1.7"/><path d="M15.4 19.2c0-2.3 1.1-3.9 2.6-3.9s2.6 1.6 2.6 3.9" fill="none" stroke="#2e9e5b" stroke-width="1.9" stroke-linecap="round"/></symbol>
+<symbol id="i-video" viewBox="0 0 24 24"><rect x="5" y="2.8" width="14" height="18.4" rx="3.6" fill="#eaf2fc" stroke="#1e56a8" stroke-width="2"/><circle cx="12" cy="12" r="3.7" fill="#fff" stroke="#d8433a" stroke-width="2"/><path d="M10.9 10.5 14.2 12l-3.3 1.5z" fill="#d8433a"/><circle cx="12" cy="5.2" r=".9" fill="#1e56a8"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#e9f7ef" stroke="#2e9e5b" stroke-width="2"/><path d="M7.8 12.4l2.9 2.9 5.5-5.9" fill="none" stroke="#2e9e5b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-scale" viewBox="0 0 24 24"><rect x="3.4" y="4" width="17.2" height="16" rx="4" fill="#eaf2fc" stroke="#1e56a8" stroke-width="2"/><path d="M12 7.6v8.8" fill="none" stroke="#1e56a8" stroke-width="2" stroke-linecap="round"/><path d="M12 7.6l4.8 2.4M12 7.6l-4.8 2.4" fill="none" stroke="#1e56a8" stroke-width="2" stroke-linecap="round"/><path d="M12 17.4l-2.2 2.4h4.4z" fill="#d8433a"/></symbol>
+<symbol id="i-yoga" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.7" fill="#ffd9c7" stroke="#7a5ea8" stroke-width="1.8"/><path d="M12 8.8v4.6" fill="none" stroke="#7a5ea8" stroke-width="2" stroke-linecap="round"/><path d="M6.6 13.4h10.8" fill="none" stroke="#7a5ea8" stroke-width="2" stroke-linecap="round"/><path d="M8.6 13.4 12 17.4l3.4-4" fill="none" stroke="#7a5ea8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 20.4h14" fill="none" stroke="#7a5ea8" stroke-width="2" stroke-linecap="round"/></symbol>
+</svg>
+<div id="login-mask">
+  <div class="login-card">
+    <div class="lg-title"><svg class="ic" style="width:32px;height:32px"><use href="#i-run"/></svg> 砺行体测小管家</div>
+    <p class="muted" style="margin:8px 0 14px">登录后自动记住你的档案与每次成绩，不同账号数据互不干扰</p>
+    <div style="margin-bottom:10px"><label>手机号（作为账号）</label><input id="lg-phone" type="tel" maxlength="11" placeholder="11位手机号"></div>
+    <div style="margin-bottom:10px"><label>用户名</label><input id="lg-name" placeholder="如：小明"></div>
+    <div style="margin-bottom:4px"><label>密码</label><input id="lg-pwd" type="password" placeholder="至少6位"></div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn" onclick="doLogin()">登录</button>
+      <button class="btn sec" onclick="doRegister()">注册新账号</button>
+    </div>
+    <div id="lg-msg" style="margin-top:10px"></div>
+    <p class="muted" style="margin-top:14px">数据只保存在本机浏览器，密码加密存储，不会上传</p>
+  </div>
+</div>
+<header>
+  <h1><svg class="ic h1-run" style="width:34px;height:34px;vertical-align:-8px"><use href="#i-run"/></svg> 砺行体测小管家</h1>
+  <p>大连理工大学 · 第四届AIGC大赛参赛作品</p>
+  <div id="userbar" class="hide"></div>
+</header>
+
+<nav id="nav">
+  <button data-p="home" class="active"><svg class="ic"><use href="#i-flag"/></svg> 总览</button>
+  <button data-p="assess"><svg class="ic"><use href="#i-clip"/></svg> 成绩测评</button>
+  <button data-p="plan"><svg class="ic"><use href="#i-cal"/></svg> 训练计划</button>
+  <button data-p="skill"><svg class="ic"><use href="#i-dumb"/></svg> 动作教室</button>
+  <button data-p="notes"><svg class="ic"><use href="#i-bell"/></svg> 考前须知</button>
+  <button data-p="record"><svg class="ic"><use href="#i-chart"/></svg> 成绩档案</button>
+</nav>
+
+<div class="wrap">
+
+<!-- ===================== 总览 ===================== -->
+<section id="p-home">
+  <div class="card">
+    <span class="ib o"><svg class="ic ic-lg"><use href="#i-smile"/></svg></span>开始使用
+    <p style="font-size:13.5px">我是你的体测备考智能体。告诉我你的<b>年级、班型和当前成绩</b>，我会为你：</p>
+    <div style="margin-top:8px;font-size:13.5px">
+      <div>① 按《国家学生体质健康标准》+ 校内课程考核标准 <b>预测得分</b></div>
+      <div>② 诊断弱项，计算与<b>目标成绩</b>的差距</div>
+      <div>③ 生成<b>每周训练计划</b>，讲解动作要点并纠正错误动作</div>
+      <div>④ 提供<b>考前注意事项</b>（热身 · 用餐 · 提分小妙招）</div>
+      <div>⑤ <b>记录每次成绩</b>，追踪提升曲线</div>
+    </div>
+    <div style="margin-top:12px"><button class="btn" onclick="go('assess')">开始录入成绩 →</button></div>
+  </div>
+
+  <div class="card">
+    <span class="ib o"><svg class="ic ic-lg"><use href="#i-cal"/></svg></span>本学期体测安排（2026年秋）
+    <div class="warnbox">⏰ 国家体质测试（10月17、18、24、25日）已结束；当前阶段重点是<b>课程耐力跑考试（十月末至十一月初）</b>，未参加的同学可参加 <b>2027年5–6月补测</b>。</div>
+    <table>
+      <tr><th>事项</th><th>安排</th></tr>
+      <tr><td>国家体质测试时间</td><td>2026年10月17、18、24、25日<br>8:30–11:00，14:00–16:00</td></tr>
+      <tr><td>耐力跑课程考试</td><td>计划十月末至十一月初开展</td></tr>
+      <tr><td>补测</td><td>2027年5–6月</td></tr>
+      <tr><td>缓测</td><td>因运动损伤无法参加者提交病例，2027年秋季开学初缓测</td></tr>
+      <tr><td>测试地点</td><td>田径场：50米、1000米(男)、800米(女)、引体向上(男)<br>B01：身高体重、肺活量、立定跳远、坐位体前屈、仰卧起坐(女)</td></tr>
+      <tr><td>必带证件</td><td>学生证、玉兰卡或身份证</td></tr>
+      <tr><td>测试流程</td><td>B01门前取卡 → 测试场地测试 → B01办公室交卡确认成绩</td></tr>
+    </table>
+    <div class="tip">💡 等级评定：总分 ≥90 优秀｜80–89.9 良好｜60–79.9 及格｜&lt;60 不及格。大学期间至少需有两次体测达到50分及以上才能通过毕业资格审核。</div>
+  </div>
+
+  <div class="card">
+    <span class="ib"><svg class="ic ic-lg"><use href="#i-classes"/></svg></span>三种班型 · 你属于哪种？
+    <div class="acc"><div class="hd" onclick="tg(this)"><svg class="ic"><use href="#i-check"/></svg> 标准班（大多数同学）<span>▾</span></div><div class="bd">
+      <p style="font-size:13.5px">按正常课程考核与国家体质测试标准评定成绩。在「成绩测评」页录入当前成绩即可获得预测与训练计划。</p>
+    </div></div>
+    <div class="acc"><div class="hd" onclick="tg(this)"><svg class="ic"><use href="#i-yoga"/></svg> 体育保健班（太极拳、瑜伽及健康教育类课程）<span>▾</span></div><div class="bd">
+      <p style="font-size:13.5px">当学期公共体育课期末成绩按照<b>出席情况在 0～65 分</b>间综合评定。</p>
+      <div class="tip">训练建议：以出勤为第一要务，配合低强度活动（散步、拉伸、太极/瑜伽复习），不追求高强度训练。</div>
+    </div></div>
+    <div class="acc"><div class="hd" onclick="tg(this)"><svg class="ic"><use href="#i-scale"/></svg> 体质健康提升训练班（BMI ≥ 30 同学）<span>▾</span></div><div class="bd">
+      <p style="font-size:13.5px">面向 BMI≥30 kg/m² 同学开设，期末成绩评定标准：</p>
+      <table>
+        <tr><th>年级 / 学期</th><th>平时</th><th>减重效果</th><th>耐力跑 2000/2400m</th><th>体测</th></tr>
+        <tr><td>大一大二 · 上学期</td><td>10%</td><td>70%</td><td>20%</td><td>—</td></tr>
+        <tr><td>大一大二 · 下学期</td><td>10%</td><td>50%</td><td>20%</td><td>20%</td></tr>
+        <tr><td>大三 · 上学期</td><td>10%</td><td>90%</td><td>—</td><td>—</td></tr>
+        <tr><td>大三 · 下学期</td><td>10%</td><td>70%</td><td>—</td><td>20%</td></tr>
+      </table>
+      <div class="tip">提升班的核心是<b>科学减重</b>：饮食控制 + 中低强度有氧为主，训练计划会自动切换为「减重模式」。</div>
+    </div></div>
+  </div>
+
+  <div class="card">
+    <span class="ib "><svg class="ic ic-lg"><use href="#i-chart"/></svg></span>年级课程构成与项目占比
+    <table>
+      <tr><th>年级 / 课程</th><th>成绩构成</th></tr>
+      <tr><td>2026级 体能课<br><span class="muted">（中外合作办学、帮扶班除外）</span></td><td>平时成绩 10% ＋ 身体素质 90%：<br>2000/2400米 30% · 立定跳远 20% · 50米 20% · 4×10折返跑 20%</td></tr>
+      <tr><td>2025级 专项课</td><td>平时 10% ＋ 身体素质 40%（2400/2000米 20% · 立定跳远 20%）＋ 专项 50%</td></tr>
+      <tr><td>2024级 竞赛课</td><td>平时 10% ＋ 专项 90%</td></tr>
+      <tr><td>2026级 中外合作办学</td><td>平时 10% ＋ 身体素质 40%（2400/2000米 20% · 立定跳远 20%）＋ 专项 50%</td></tr>
+    </table>
+    <h3>国家大学生体质测试项目占比（全体本科生）</h3>
+    <table>
+      <tr><th>项目</th><th>男</th><th>女</th></tr>
+      <tr><td>体重指数 BMI</td><td colspan="2" style="text-align:center">15%</td></tr>
+      <tr><td>肺活量</td><td colspan="2" style="text-align:center">15%</td></tr>
+      <tr><td>50米跑</td><td colspan="2" style="text-align:center">20%</td></tr>
+      <tr><td>坐位体前屈</td><td colspan="2" style="text-align:center">10%</td></tr>
+      <tr><td>立定跳远</td><td colspan="2" style="text-align:center">10%</td></tr>
+      <tr><td>引体向上(男) / 一分钟仰卧起坐(女)</td><td colspan="2" style="text-align:center">10%</td></tr>
+      <tr><td>1000米跑(男) / 800米跑(女)</td><td colspan="2" style="text-align:center">20%</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 成绩测评 ===================== -->
+<section id="p-assess" class="hide">
+  <div class="card">
+    <span class="ib o"><svg class="ic ic-lg"><use href="#i-card"/></svg></span>我的档案
+    <div class="grid g2">
+      <div><label>年级 / 课程类型</label>
+        <select id="f-grade">
+          <option value="g2026">2026级 · 体能课</option>
+          <option value="g2025">2025级 · 专项课</option>
+          <option value="g2024">2024级 · 竞赛课</option>
+          <option value="g2026f">2026级 · 中外合作办学</option>
+        </select></div>
+      <div><label>性别</label>
+        <select id="f-gender"><option value="m">男</option><option value="f">女</option></select></div>
+      <div><label>身高 (cm)</label><input id="f-height" type="number" placeholder="如 175"></div>
+      <div><label>体重 (kg)</label><input id="f-weight" type="number" placeholder="如 65"></div>
+      <div><label>目标成绩（国家体测总分）</label><input id="f-target" type="number" placeholder="如 80" value="80"></div>
+      <div><label>体测/考试日期</label><input id="f-date" type="date"></div>
+      <div id="spec-box" class="hide"><label>专项成绩（0–100）</label><input id="f-spec" type="number" placeholder="如 85"></div>
+    </div>
+    <h3><svg class="ic"><use href="#i-classes"/></svg> 班型</h3>
+    <div class="pill-row" id="track-pills">
+      <div class="pill on" data-v="std"><svg class="ic"><use href="#i-check"/></svg> 标准班</div>
+      <div class="pill" data-v="fit"><svg class="ic"><use href="#i-scale"/></svg> 提升训练班（BMI≥30）</div>
+      <div class="pill" data-v="health"><svg class="ic"><use href="#i-yoga"/></svg> 体育保健班</div>
+    </div>
+    <div id="bmi-hint" class="muted" style="margin-top:4px"></div>
+  </div>
+
+  <div class="card" id="input-card">
+    <span class="ib "><svg class="ic ic-lg"><use href="#i-clip"/></svg></span>输入当前成绩
+    <p class="muted">时间类项目填 分:秒（如 4:32）或秒数；没测的项目可以留空。</p>
+    <h3>国家体质测试项目</h3>
+    <div class="grid g3" id="nat-inputs"></div>
+    <div id="course-input-area">
+      <h3>课程身体素质考核项目（20/30分制）</h3>
+      <div class="grid g3" id="course-inputs"></div>
+      <p class="muted" style="margin-top:4px">⚠️ 男生立定跳远/50米/折返跑及女生2000米校内存量表为按国家标准推算的估算值，以体育部公布为准。</p>
+    </div>
+    <div style="margin-top:14px"><button class="btn" onclick="runAssess()">✅ 确认并生成测评</button></div>
+  </div>
+
+  <div id="result-area"></div>
+</section>
+
+<!-- ===================== 训练计划 ===================== -->
+<section id="p-plan" class="hide">
+  <div class="card">
+    <span class="ib "><svg class="ic ic-lg"><use href="#i-run"/></svg></span>每周训练计划生成器
+    <p class="muted">请先在「成绩测评」完成档案与成绩录入，然后点击生成。计划会根据你的弱项、班型和剩余时间自动定制。</p>
+    <div style="margin-top:10px">
+      <button class="btn" onclick="genPlanUI()">🤖 生成我的专属周计划</button>
+    </div>
+  </div>
+  <div id="plan-area"></div>
+</section>
+
+<!-- ===================== 动作教室 ===================== -->
+<section id="p-skill" class="hide">
+  <div class="card"><span class="ib "><svg class="ic ic-lg"><use href="#i-dumb"/></svg></span>动作要点与纠错教室
+  <p class="muted">点击展开每个项目的技术要点、常见错误与纠正方法。测试前一周重点复习「考试策略」部分。</p></div>
+  <div id="skill-area"></div>
+</section>
+
+<!-- ===================== 考前须知 ===================== -->
+<section id="p-notes" class="hide">
+  <div class="warnbox" style="font-size:15.5px;padding:12px 14px">⚠️ <b>注意：切记需携带玉兰卡或身份证</b>参加测试！</div>
+  <div class="card">
+    <span class="ib r"><svg class="ic ic-lg"><use href="#i-fire"/></svg></span>体测前 · 热身动作（测试前15–20分钟完成）
+    <table>
+      <tr><th>动作</th><th>时长/次数</th><th>作用</th></tr>
+      <tr><td>原地慢跑 / 开合跳</td><td>2–3分钟</td><td>提升心率、激活全身</td></tr>
+      <tr><td>高抬腿</td><td>20秒 × 2组</td><td>激活髋部与跑动神经</td></tr>
+      <tr><td>后踢腿跑</td><td>20秒 × 2组</td><td>激活大腿后侧</td></tr>
+      <tr><td>弓步走转体</td><td>每侧8次</td><td>拉伸髋屈肌、激活核心</td></tr>
+      <tr><td>腿部动态摆动（前后/侧向）</td><td>每侧10次</td><td>动态拉伸腘绳肌、内收肌</td></tr>
+      <tr><td>肩绕环 + 手臂摆动</td><td>各10次</td><td>唤醒肩带（引体/仰卧起坐前必做）</td></tr>
+      <tr><td>踝关节绕环 + 提踵</td><td>各15次</td><td>防崴脚，立定跳远落地缓冲</td></tr>
+      <tr><td>加速跑 2×30米（约80%速度）</td><td>间歇1分钟</td><td>50米/折返跑/长跑前最后激活</td></tr>
+    </table>
+    <div class="warnbox">❌ 不要做长时间静态拉伸（压腿保持30秒以上会暂时降低爆发力），静态拉伸留到测试后放松。</div>
+    <h3><svg class="ic"><use href="#i-video"/></svg> 热身动作跟练小视频</h3>
+    <div id="warmup-videos"></div>
+  </div>
+
+  <div class="card">
+    <span class="ib "><svg class="ic ic-lg"><use href="#i-food"/></svg></span>体测前 · 用餐注意
+    <ul style="padding-left:18px;font-size:13.5px">
+      <li><b>测试前2–3小时</b>吃完正餐，七分饱；忌空腹也忌过饱。</li>
+      <li>推荐主食：米饭、面条、面包等<b>易消化碳水</b>＋少量蛋白质（鸡蛋/牛奶）；避免油炸、辛辣、豆类等易胀气食物。</li>
+      <li><b>前1天晚上</b>：不饮酒、不喝浓茶咖啡、不尝试没吃过的食物，23点前入睡。</li>
+      <li>测试前30分钟可喝水<b>少量多次</b>（100–200ml），前15分钟停止大量饮水；长跑前不要猛灌水。</li>
+      <li>不要空腹喝咖啡或功能饮料——心率加快容易在长跑中不适；如需使用请提前几天在训练中试过。</li>
+      <li>肺活量测试前不要吃口香糖、喝碳酸饮料，以免影响吹气。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="ib o"><svg class="ic ic-lg"><use href="#i-bulb"/></svg></span>体测提分小妙招
+    <h3><svg class="ic"><use href="#i-video"/></svg> 各项目小妙招视频（点按直达抖音/B站/小红书）</h3>
+    <div class="pill-row" id="tips-videos"></div>
+    <h3><svg class="ic"><use href="#i-bulb"/></svg> 各项目文字小妙招</h3>
+    <div id="tips-text"></div>
+    <h3><svg class="ic"><use href="#i-cal"/></svg> 测试当天策略</h3>
+    <div class="tip"><b>合理安排顺序</b>：先测立定跳远、坐位体前屈等技巧项目，把50米、1000/800米等耗体力项目适当错开；同一天先短跑后长跑，中间留足休息。</div>
+    <div class="tip"><b>装备</b>：合脚轻便的跑鞋（不要穿新鞋）、短袜、贴身运动服；头发扎起；摘掉手表饰品。</div>
+    <h3><svg class="ic"><use href="#i-run"/></svg> 长跑（1000/800/2400/2000米）配速法</h3>
+    <div class="tip">起跑前200米不要冲太快，占位中道；途中跑保持<b>匀速、三步一呼三步一吸</b>（鼻吸口呼）；最后300–400米逐渐提速冲刺。跟住比自己略快的同学"咬住不放"比独自跑快10秒以上。</div>
+    <h3><svg class="ic"><use href="#i-lung"/></svg> 肺活量提分</h3>
+    <div class="tip">先深吸2–3次预通气；正式吸气时<b>弯腰挺身、鼻口同时深吸到极限</b>；吹气时身体前倾、双手按住浮标两侧匀速持久吹，最后低头收腹把残余气"挤"出来。吹2次取最好成绩。</div>
+    <h3><svg class="ic"><use href="#i-medal"/></svg> 其他细节</h3>
+    <div class="tip">立定跳远起跳前摆臂2–3次找节奏，落地<b>收腹举腿向前伸小腿</b>，脚跟先触垫顺势前压，千万别用手向后撑。每人跳2次取最好成绩，注意不要踩线。</div>
+    <div class="tip">仰卧起坐动作到位、耳朵碰到膝盖才算数；节奏比速度重要——前30秒控制在55–60%速度，最后15秒冲刺。</div>
+    <div class="tip">引体向上采用正握略宽于肩，先做2–3次"挂杠沉肩"激活背阔肌；不追求快速，用背发力而不是甩腿。</div>
+    <div class="warnbox">⚠️ 测试中如出现头晕、胸闷等异常，立即停止并向在场老师报告。成绩登记时要现场核对确认。</div>
+  </div>
+
+  <div class="card">
+    <span class="ib g"><svg class="ic ic-lg"><use href="#i-clip"/></svg></span>考试规则速查
+    <ul style="padding-left:18px;font-size:13.5px">
+      <li>因伤病、实习等不能参加测试，可参加<b>下学期补测</b>（2027年5–6月）。</li>
+      <li>因特殊疾病无法参加者：10月12日13:30前，持近期三甲医院诊断书及医嘱送至 C05-221B 办公室苏老师处。</li>
+      <li>缓测：因意外运动损伤无法参加前两次测试的同学，提交病例审核通过后于2027年秋季开学初针对性缓测。</li>
+      <li>替考、涂改成绩卡等按考试作弊严肃处理。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================== 成绩档案 ===================== -->
+<section id="p-record" class="hide">
+  <div class="card">
+    <span class="ib "><svg class="ic ic-lg"><use href="#i-chart"/></svg></span>成绩记录与趋势
+    <p class="muted">每次测试/训练后记录一次，<b>各项目分开填写</b>；下方图表可<b>逐项查看提升曲线</b>。数据保存在本机浏览器中。</p>
+    <div class="grid g3" style="margin-top:8px">
+      <div><label>记录日期</label><input id="r-date" type="date"></div>
+      <div><label>备注（可选）</label><input id="r-note" type="text" placeholder="如：本周训练后测试"></div>
+      <div><label>总分（留空自动计算）</label><input id="r-total" type="number" placeholder="留空自动算"></div>
+    </div>
+    <h3>本次各项目成绩</h3>
+    <div class="grid g3" id="rec-nat"></div>
+    <div id="rec-course-area"><h3>课程身体素质项目</h3><div class="grid g3" id="rec-course"></div></div>
+    <div style="margin-top:10px"><button class="btn sm" onclick="addRecord()">➕ 保存本次记录</button></div>
+  </div>
+  <div class="card">
+    <span class="ib g"><svg class="ic ic-lg"><use href="#i-chart"/></svg></span>提升曲线（分项目查看）
+    <div class="pill-row" id="chart-pick"></div>
+    <svg class="chart" id="chart" viewBox="0 0 680 180" preserveAspectRatio="none"></svg>
+    <div class="legend" id="chart-legend"></div>
+    <table id="chart-table"></table>
+  </div>
+  <div class="card">
+    <span class="ib o"><svg class="ic ic-lg"><use href="#i-clip"/></svg></span>历史记录
+    <div id="rec-list"></div>
+  </div>
+</section>
+
+<footer>砺行体测小管家 · 数据标准：《国家学生体质健康标准(2014年修订)》及大连理工大学体育与健康学院课程考核文件<br>校内课程部分男生标准与女生2000米标准为估算值，以体育部正式公布为准 · 仅供参考，量力而练</footer>
+</div>
+
+<script>
+/* ================= 数据：国家学生体质健康标准（2014年修订） ================= */
+/* 格式 [得分, 大一大二线, 大三大四线]；时间类为秒（越小越好） */
+const NAT = {
+  m: {
+    lung:  [[100,5040,5140],[95,4920,5020],[90,4800,4900],[85,4550,4650],[80,4300,4400],[78,4180,4280],[76,4060,4160],[74,3940,4040],[72,3820,3920],[70,3700,3800],[68,3580,3680],[66,3460,3560],[64,3340,3440],[62,3220,3320],[60,3100,3200],[50,2940,3030],[40,2780,2860],[30,2620,2690],[20,2460,2520],[10,2300,2350]],
+    run50: [[100,6.7,6.6],[95,6.8,6.7],[90,6.9,6.8],[85,7.0,6.9],[80,7.1,7.0],[78,7.3,7.2],[76,7.5,7.4],[74,7.7,7.6],[72,7.9,7.8],[70,8.1,8.0],[68,8.3,8.2],[66,8.5,8.4],[64,8.7,8.6],[62,8.9,8.8],[60,9.1,9.0],[50,9.3,9.2],[40,9.5,9.4],[30,9.7,9.6],[20,9.9,9.8],[10,10.1,10.0]],
+    sitr:  [[100,24.9,25.1],[95,23.1,23.3],[90,21.3,21.5],[85,19.5,19.9],[80,17.7,18.2],[78,16.3,16.8],[76,14.9,15.4],[74,13.5,14.0],[72,12.1,12.6],[70,10.7,11.2],[68,9.3,9.8],[66,7.9,8.4],[64,6.5,7.0],[62,5.1,5.6],[60,3.7,4.2],[50,2.7,3.2],[40,1.7,2.2],[30,0.7,1.2],[20,-0.3,0.2],[10,-1.3,-0.8]],
+    jump:  [[100,273,275],[95,268,270],[90,263,265],[85,256,258],[80,248,250],[78,244,246],[76,240,242],[74,236,238],[72,232,234],[70,228,230],[68,224,226],[66,220,222],[64,216,218],[62,212,214],[60,208,210],[50,203,205],[40,198,200],[30,193,195],[20,188,190],[10,183,185]],
+    pull:  [[100,19,20],[95,18,19],[90,17,18],[85,16,17],[80,15,16],[78,14,15],[76,14,15],[74,13,14],[72,13,14],[70,12,13],[68,12,13],[66,11,12],[64,11,12],[62,10,11],[60,10,11],[50,9,9],[40,8,8],[30,7,7],[20,6,6],[10,5,5]],
+    runLD: [[100,197,195],[95,202,200],[90,207,205],[85,214,212],[80,222,220],[78,227,225],[76,232,230],[74,237,235],[72,242,240],[70,247,245],[68,252,250],[66,257,255],[64,262,260],[62,267,265],[60,272,270],[50,292,290],[40,312,310],[30,332,330],[20,352,350],[10,372,370]]
+  },
+  f: {
+    lung:  [[100,3400,3450],[95,3350,3400],[90,3300,3350],[85,3150,3200],[80,3000,3050],[78,2900,2950],[76,2800,2850],[74,2700,2750],[72,2600,2650],[70,2500,2550],[68,2400,2450],[66,2300,2350],[64,2200,2250],[62,2100,2150],[60,2000,2050],[50,1960,2010],[40,1920,1970],[30,1880,1930],[20,1840,1890],[10,1800,1850]],
+    run50: [[100,7.5,7.4],[95,7.6,7.5],[90,7.7,7.6],[85,7.9,7.8],[80,8.1,8.0],[78,8.3,8.2],[76,8.5,8.4],[74,8.7,8.6],[72,8.9,8.8],[70,9.1,9.0],[68,9.3,9.2],[66,9.5,9.4],[64,9.7,9.6],[62,9.9,9.8],[60,10.1,10.0],[50,10.3,10.2],[40,10.5,10.4],[30,10.7,10.6],[20,10.9,10.8],[10,11.1,11.0]],
+    sitr:  [[100,25.8,26.3],[95,24.0,24.4],[90,22.2,22.4],[85,20.6,21.0],[80,19.0,19.5],[78,17.7,18.2],[76,16.4,16.9],[74,15.1,15.6],[72,13.8,14.3],[70,12.5,13.0],[68,11.2,11.7],[66,9.9,10.4],[64,8.6,9.1],[62,7.3,7.8],[60,6.0,6.5],[50,5.2,4.9],[40,4.4,4.1],[30,3.6,3.1],[20,2.8,2.3],[10,2.0,1.5]],
+    jump:  [[100,207,208],[95,201,202],[90,195,196],[85,188,189],[80,181,182],[78,178,179],[76,175,176],[74,172,173],[72,169,170],[70,166,167],[68,163,164],[66,160,161],[64,157,158],[62,154,155],[60,151,152],[50,146,147],[40,141,142],[30,136,137],[20,131,132],[10,126,127]],
+    situp: [[100,56,57],[95,54,55],[90,52,53],[85,49,50],[80,46,47],[78,44,45],[76,42,43],[74,40,41],[72,38,39],[70,36,37],[68,34,35],[66,32,33],[64,30,31],[62,28,29],[60,26,27],[50,24,25],[40,22,23],[30,20,21],[20,18,19],[10,16,17]],
+    runLD: [[100,198,196],[95,204,202],[90,210,208],[85,217,215],[80,224,222],[78,229,227],[76,234,232],[74,239,237],[72,244,242],[70,249,247],[68,254,252],[66,259,257],[64,264,262],[62,269,267],[60,274,272],[50,284,282],[40,294,292],[30,304,302],[20,314,312],[10,324,322]]
+  }
+};
+
+/* 2026级课程身体素质考核标准（20分制 / 耐力跑30分制）
+   格式统一为 [得分, 大一大二线, 大三大四线]（课程考核不分年级，两列相同）
+   注：男生立定跳远/50米/折返跑、女生2000米为按国家标准差值推算的估算值 */
+const COURSE = {
+  endur: { /* 耐力跑30分制：男2400m（校内存表），女2000m（按2400表距离比换算的估算值） */
+    m: [[30,600,600],[28,630,630],[26,659,659],[24,690,690],[22,719,719],[20,750,750],[18,779,779],[16,810,810],[14,839,839],[12,870,870],[10,899,899],[8,930,930],[6,959,959],[4,990,990],[2,1019,1019]],
+    f: [[30,500,500],[28,525,525],[26,549,549],[24,575,575],[22,599,599],[20,625,625],[18,649,649],[16,675,675],[14,699,699],[12,725,725],[10,749,749],[8,775,775],[6,799,799],[4,825,825],[2,849,849]]
+  },
+  jump: {
+    m: [[20,273,273],[19,267,267],[18,261,261],[17,254,254],[16,247,247],[15,244,244],[14,241,241],[13,238,238],[12,235,235],[11,232,232],[10,229,229],[9,226,226],[8,223,223],[7,220,220],[6,217,217],[5,212,212],[4,207,207],[3,202,202],[2,197,197],[1,192,192]],
+    f: [[20,207,207],[19,201,201],[18,195,195],[17,188,188],[16,181,181],[15,178,178],[14,175,175],[13,172,172],[12,169,169],[11,166,166],[10,163,163],[9,160,160],[8,157,157],[7,154,154],[6,151,151],[5,146,146],[4,141,141],[3,136,136],[2,131,131],[1,126,126]]
+  },
+  run50: {
+    m: [[20,6.7,6.7],[19,6.8,6.8],[18,6.9,6.9],[17,7.2,7.2],[16,7.5,7.5],[15,7.7,7.7],[14,7.9,7.9],[13,8.1,8.1],[12,8.3,8.3],[11,8.5,8.5],[10,8.7,8.7],[9,8.9,8.9],[8,9.1,9.1],[7,9.3,9.3],[6,9.5,9.5],[5,9.7,9.7],[4,9.9,9.9],[3,10.1,10.1],[2,10.3,10.3],[1,10.5,10.5]],
+    f: [[20,7.5,7.5],[19,7.6,7.6],[18,7.7,7.7],[17,8.0,8.0],[16,8.3,8.3],[15,8.5,8.5],[14,8.7,8.7],[13,8.9,8.9],[12,9.1,9.1],[11,9.3,9.3],[10,9.5,9.5],[9,9.7,9.7],[8,9.9,9.9],[7,10.1,10.1],[6,10.3,10.3],[5,10.5,10.5],[4,10.7,10.7],[3,10.9,10.9],[2,11.1,11.1],[1,11.3,11.3]]
+  },
+  shuttle: { /* 4x10米折返跑 */
+    m: [[20,9.2,9.2],[19,9.4,9.4],[18,9.6,9.6],[17,9.8,9.8],[16,10.0,10.0],[15,10.2,10.2],[14,10.4,10.4],[13,10.6,10.6],[12,10.8,10.8],[11,11.0,11.0],[10,11.4,11.4],[9,11.6,11.6],[8,11.8,11.8],[7,12.0,12.0],[6,12.2,12.2],[5,12.4,12.4],[4,12.6,12.6],[3,12.8,12.8],[2,13.0,13.0],[1,13.2,13.2]],
+    f: [[20,10.4,10.4],[19,10.6,10.6],[18,10.8,10.8],[17,11.0,11.0],[16,11.2,11.2],[15,11.4,11.4],[14,11.6,11.6],[13,11.8,11.8],[12,12.0,12.0],[11,12.2,12.2],[10,12.6,12.6],[9,12.8,12.8],[8,13.0,13.0],[7,13.2,13.2],[6,13.4,13.4],[5,13.6,13.6],[4,13.8,13.8],[3,14.0,14.0],[2,14.2,14.2],[1,14.4,14.4]]
+  }
+};
+
+/* ================= 工具 ================= */
+const $ = id => document.getElementById(id);
+function parseTime(s){ // "4:32" / "4'32"" / "4分32" / "272" -> 秒
+  if(!s) return NaN;
+  s = String(s).trim().replace(/[‘’`]/g, "'");
+  let m = s.match(/^(\d+)?:?[':]?\s*(\d*)$/);
+  let m1 = s.match(/^(\d+)\s*[:：'’″"分]\s*(\d{1,2}(?:\.\d+)?)/);
+  if(m1){
+    const mm = parseInt(m1[1]), ss = parseFloat(m1[2]);
+    // 冒号后 ≥60 说明不是"分:秒"，而是把小数点误写成冒号（如 9:97 → 9.97 秒）
+    if(ss >= 60) return parseFloat(mm + '.' + ss);
+    return mm*60 + ss;
+  }
+  const v = parseFloat(s);
+  return isNaN(v) ? NaN : v;
+}
+function fmtTime(sec){
+  sec = Math.round(sec);
+  const m = Math.floor(sec/60), s = sec%60;
+  return m + "'" + String(s).padStart(2,'0') + '"';
+}
+function scoreFrom(table, val, upper){ // upper: 0=大一大二, 1=大三大四
+  if(isNaN(val)) return null;
+  // 判断方向：阈值随分数降低而降低 → 高优（越大越好），反之低优（越小越好）
+  const dir = table[0][1] > table[1][1] ? 'high' : 'low'; // high: 越大越好
+  for(const row of table){
+    const th = row[1+upper];
+    if(dir==='high' ? val>=th : val<=th) return row[0];
+  }
+  return 0;
+}
+function nextGap(table, val, upper, curScore){ // 距离下一分数档需要提升多少
+  const dir = table[0][1] > table[1][1] ? 'high' : 'low';
+  for(let i=0;i<table.length;i++){
+    if(table[i][0]===curScore && i>0){
+      return Math.abs(table[i-1][1+upper] - val);
+    }
+  }
+  return null;
+}
+function tg(hd){ hd.parentElement.classList.toggle('open'); }
+function go(p){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.p===p));
+  ['home','assess','plan','skill','notes','record'].forEach(x=>$('p-'+x).classList.toggle('hide', x!==p));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.p));
+
+/* ================= 档案与班型 ================= */
+let track = 'std';
+document.querySelectorAll('#track-pills .pill').forEach(p=>p.onclick=()=>{
+  document.querySelectorAll('#track-pills .pill').forEach(x=>x.classList.remove('on'));
+  p.classList.add('on'); track = p.dataset.v; updateBMIHint(); saveProfile();
+});
+function getProfile(){
+  const g = $('f-grade').value;
+  return {
+    grade: g,
+    is2026: g==='g2026',
+    hasSpec: g==='g2025'||g==='g2024'||g==='g2026f',
+    courseFull: g==='g2026',
+    upper: (g==='g2024') ? 1 : 0, // 2024级=大三，用大三大四标准
+    gender: $('f-gender').value,
+    height: parseFloat($('f-height').value),
+    weight: parseFloat($('f-weight').value),
+    target: parseFloat($('f-target').value)||80,
+    date: $('f-date').value,
+    spec: parseFloat($('f-spec').value)||null,
+    track
+  };
+}
+function bmi(){
+  const p = getProfile();
+  if(!p.height||!p.weight) return null;
+  return +(p.weight/Math.pow(p.height/100,2)).toFixed(1);
+}
+function updateBMIHint(){
+  const b = bmi();
+  const el = $('bmi-hint');
+  if(b===null){ el.textContent='填写身高体重后自动计算 BMI'; return; }
+  let cls='', txt='';
+  if(b>=28){cls='warn';txt='肥胖（BMI单项60分）';}
+  else if(b>=24){cls='orange';txt='超重（BMI单项80分）';}
+  else if(b>=17.9){cls='ok';txt='正常（BMI单项100分）';}
+  else {cls='orange';txt='低体重（BMI单项80分）——也要加强营养和力量训练哦';}
+  el.innerHTML = '你的 BMI：<b>'+b+'</b> → '+txt;
+  if(b>=30 && track==='std'){
+    el.innerHTML += '。BMI≥30，按学校规定应参加<b>体质健康提升训练班</b>，建议切换班型。';
+  }
+}
+['f-height','f-weight'].forEach(id=>$(id).addEventListener('input',updateBMIHint));
+$('f-grade').addEventListener('change',()=>{
+  const p = getProfile();
+  $('spec-box').classList.toggle('hide', !p.hasSpec);
+  buildInputs();
+  buildRecInputs();
+});
+$('f-gender').addEventListener('change',()=>{ buildInputs(); renderSkills(); renderTipVideos(); renderTipTexts(); buildRecInputs(); });
+
+/* ================= 输入表单构建 ================= */
+const NAT_ITEMS = [
+  {k:'lung', nm:'肺活量 (ml)', type:'num'},
+  {k:'run50', nm:'50米跑 (秒)', type:'time'},
+  {k:'sitr', nm:'坐位体前屈 (cm)', type:'num'},
+  {k:'jump', nm:'立定跳远 (cm)', type:'num'},
+  {k:'pull', nm:'引体向上 (次)', type:'num', g:'m'},
+  {k:'situp', nm:'一分钟仰卧起坐 (次/分)', type:'num', g:'f'},
+  {k:'runLD', nm:'1000米跑', type:'time', g:'m'},
+  {k:'runLD', nm:'800米跑', type:'time', g:'f'}
+];
+const COURSE_ITEMS = [
+  {k:'endur', type:'time'},
+  {k:'jump', nm:'立定跳远 (cm)', type:'num'},
+  {k:'run50', nm:'50米 (秒)', type:'num'},
+  {k:'shuttle', nm:'4×10米折返跑 (秒)', type:'time'}
+];
+function endurName(gender){ return gender==='m' ? '2400米跑 (30分制)' : '2000米跑 (30分制)'; }
+function endurShort(gender){ return gender==='m' ? '2400米跑' : '2000米跑'; }
+function buildInputs(){
+  const p = getProfile();
+  let h='';
+  NAT_ITEMS.forEach(it=>{
+    if(it.g && it.g!==p.gender) return; // 只显示本性别项目
+    h += '<div><label>'+it.nm+'</label><input id="in-'+it.k+'" placeholder="'+(it.type==='time'?'4:32':'')+'"></div>';
+  });
+  $('nat-inputs').innerHTML = h;
+  let c='';
+  COURSE_ITEMS.forEach(it=>{
+    const need = p.courseFull || (it.k==='endur'||it.k==='jump');
+    if(!need) return;
+    const nm = it.k==='endur' ? endurName(p.gender) : it.nm;
+    c += '<div><label>'+nm+'</label><input id="ci-'+it.k+'" placeholder="'+(it.type==='time'?'10:30':'')+'"></div>';
+  });
+  $('course-input-area').style.display = c? '':'none';
+  $('course-inputs').innerHTML = c;
+}
+buildInputs();
+
+/* ================= 测评 ================= */
+function gradeName(v){ return v>=90?'优秀':v>=80?'良好':v>=60?'及格':'不及格'; }
+function gradeColor(v){ return v>=90?'var(--green)':v>=80?'var(--blue)':v>=60?'var(--orange)':'var(--red)'; }
+
+function runAssess(){
+  const p = getProfile();
+  const upper = p.upper;
+  const rows = []; // {nm, val, sc, w, est}
+  NAT_ITEMS.forEach(it=>{
+    if(it.g && it.g!==p.gender) return;
+    const raw = $('in-'+it.k).value;
+    if(!raw) return;
+    const val = it.type==='time' ? parseTime(raw) : parseFloat(raw);
+    if(isNaN(val)) return;
+    const tbl = NAT[p.gender][it.k==='pull'?'pull':it.k==='situp'?'situp':it.k];
+    const sc = scoreFrom(tbl, val, upper);
+    rows.push({nm:it.nm, k:it.k, val, sc, w: it.k==='run50'||it.k==='runLD' ? 20 : (it.k==='lung'?15:(it.k==='sitr'||it.k==='jump'||(it.k==='pull'||it.k==='situp')?10:15)), nat:true, table:tbl});
+  });
+  // BMI
+  const b = bmi();
+  if(b!==null){
+    let bsc;
+    if(b>=28) bsc=60;          // 肥胖
+    else if(b>=24||b<17.9) bsc=80; // 超重 / 低体重
+    else bsc=100;              // 正常
+    rows.push({nm:'BMI 体重指数', k:'bmi', val:b, sc:bsc, w:15, nat:true, noGap:true});
+  }
+  // 国家总分
+  let natTotal=0, natW=0;
+  rows.forEach(r=>{ if(r.nat){ natTotal += r.sc*r.w; natW += r.w; } });
+  const natPred = natW>0 ? +(natTotal/natW).toFixed(1) : null;
+
+  // 课程部分（仅预测身体素质部分；平时/专项由教师评定，不再输入）
+  let courseHTML='';
+  if(p.is2026 || p.hasSpec){
+    const crows=[];
+    COURSE_ITEMS.forEach(it=>{
+      const need = p.courseFull || (it.k==='endur'||it.k==='jump');
+      if(!need) return;
+      const raw=$('ci-'+it.k).value; if(!raw) return;
+      const val = it.type==='time'? parseTime(raw): parseFloat(raw);
+      if(isNaN(val)) return;
+      const sc = scoreFrom(COURSE[it.k][p.gender], val, 0);
+      const nm = it.k==='endur' ? endurShort(p.gender) : it.nm;
+      crows.push({nm,k:it.k,val,sc, w: it.k==='endur'?(p.courseFull?30:20):20, table:COURSE[it.k][p.gender]});
+    });
+    if(crows.length){
+      let sum=0, w=0;
+      crows.forEach(r=>{sum+=r.sc*r.w; w+=r.w;});
+      const coursePart = w? +(sum/w).toFixed(1):0;
+      const bodyPart = p.courseFull? 90:40;
+      courseHTML = `<div class="card"><span class="ib g"><svg class="ic ic-lg"><use href="#i-medal"/></svg></span>课程身体素质部分预测
+        <table><tr><th>项目</th><th>成绩</th><th>得分</th><th>占比</th></tr>
+        ${crows.map(r=>`<tr><td>${r.nm}</td><td>${r.k==='endur'||r.k==='shuttle'?fmtTime(r.val):r.val}</td><td><b>${r.sc}</b></td><td>${r.w}%</td></tr>`).join('')}
+        </table>
+        <div class="kpi"><div class="k"><b>${coursePart}</b><span>身体素质部分预测得分（占课程 ${bodyPart}%）</span></div></div>
+        <p class="muted">课程总成绩 = 平时 10% ＋ 身体素质 ${bodyPart}%${p.hasSpec?' ＋ 专项 50%':''}；平时与专项由任课教师评定，此处不预测。</p>
+        ${p.track==='fit'?`<div class="warnbox">提升训练班按「减重效果」占比评定（见总览页），此预测不适用减重部分。</div>`:''}
+      </div>`;
+      window.__courseRows = crows;
+    }
+  }
+  window.__natRows = rows;
+  window.__natPred = natPred;
+
+  // 弱项诊断
+  let diag='';
+  if(natPred!==null){
+    const ranked = rows.filter(r=>!r.noGap && r.sc<100).sort((a,b)=> (a.sc/100) - (b.sc/100));
+    const weak = ranked.slice(0,3);
+    diag = `<div class="card"><span class="ib "><svg class="ic ic-lg"><use href="#i-search"/></svg></span>弱项诊断`;
+    if(!weak.length){ diag += '<div class="tip">各项表现优秀！保持训练节奏，别掉以轻心。</div>'; }
+    else{
+      weak.forEach((r,i)=>{
+        const g = nextGap(r.table, r.val, upper, r.sc);
+        // 计算提升到上一档的总分增益
+        let gainPts = null;
+        if(g!==null){
+          const idx = r.table.findIndex(x=>x[0]===r.sc);
+          if(idx>0){ gainPts = +(r.w/100*(r.table[idx-1][0]-r.sc)).toFixed(1); }
+        }
+        diag += `<div class="item-row"><span class="nm"><span class="num-badge">${i+1}</span>${r.nm}</span>
+          <div class="bar"><i style="width:${r.sc}%"></i></div>
+          <span class="sc">${r.sc}分${gainPts?` · 再提升${r.k==='runLD'?fmtTime(g):(r.k==='run50'?(Math.round(g*10)/10+'秒'):Math.round(g*10)/10+'单位')}可+${gainPts}分`:''}</span></div>`;
+      });
+      const tgt = p.target;
+      const diff = +(tgt - natPred).toFixed(1);
+      diag += diff>0
+        ? `<div class="warnbox">距离目标 ${tgt} 分还差 <b>${diff} 分</b>。优先攻克以上弱项（按性价比排序），配合「训练计划」执行 3–4 周通常可提升 4–8 分。</div>`
+        : `<div class="tip">已超过目标 ${tgt} 分（当前预测 ${natPred}），可以冲击更高目标！</div>`;
+    }
+    diag += '</div>';
+  }
+
+  // 结果渲染
+  let html = `<div class="card"><span class="ib o"><svg class="ic ic-lg"><use href="#i-medal"/></svg></span>国家体测总分预测`;
+  if(natPred===null){
+    html += '<p class="muted">请至少填写一项成绩。</p>';
+  } else {
+    html += `<div class="kpi">
+      <div class="k"><span class="score-big" style="color:${gradeColor(natPred)}">${natPred}</span><span>预测总分 · ${gradeName(natPred)}</span></div>
+      <div class="k"><b>${p.target}</b><span>我的目标</span></div>
+      <div class="k"><b>${b??'—'}</b><span>BMI</span></div>
+    </div>`;
+    html += '<h3>单项得分</h3>';
+    rows.forEach(r=>{
+      html += `<div class="item-row"><span class="nm">${r.nm}</span>
+        <div class="bar"><i style="width:${r.sc}%"></i></div>
+        <span class="sc">${r.k==='runLD'?fmtTime(r.val):r.val} → <b style="color:${gradeColor(r.sc)}">${r.sc}分</b>（占${r.w}%）</span></div>`;
+    });
+    // 满分差距提示
+    const nearFull = rows.filter(r=>!r.noGap && r.sc>=95 && r.sc<100);
+    if(nearFull.length) html += `<div class="tip">🎯 冲刺提示：${nearFull.map(r=>r.nm).join('、')}已接近满分，稍加训练可满分并可能触发<b>加分项</b>（引体/仰卧起坐与长跑最多各+10分，总分可达120）。</div>`;
+  }
+  html += '</div>';
+  $('result-area').innerHTML = html + diag + courseHTML;
+  saveProfile();
+  go('assess');
+  setTimeout(()=>{ $('result-area').scrollIntoView({behavior:'smooth'}); },50);
+}
+
+/* ================= 训练计划生成 ================= */
+const FOCUS = {
+  endur: {nm:'耐力跑', days:['慢跑30分钟+4×100米加速跑','间歇跑：400米×5组（组间休息90秒，配速略快于目标）','核心训练20分钟（平板支撑、卷腹）+ 放松跑15分钟','节奏跑：目标配速连续跑12–15分钟×2组','慢跑40分钟（轻松聊天气配）','变速跑：快1分慢1分 ×8轮','休息或散步拉伸30分钟']},
+  sprint:{nm:'速度（50米/折返跑）', days:['起跑练习：蹲踞式/站立式起跑×8次 + 30米加速×4','30米全速冲刺×6组（组间休息2分钟）','折返跑练习：4×10米×4组（练转身降速触区技术）','蛙跳+高抬腿各3组 + 50米计时×2',' Hills/楼梯跑 15分钟（若无条件：快速后蹬跑×6组）','轻松慢跑20分钟+腿部动态拉伸','休息']},
+  jump:  {nm:'立定跳远/爆发力', days:['立定跳远完整动作×10次（录像自查摆臂与收腹）','深蹲跳3×8 + 单脚跳3×10米 + 收腹跳3×8','蛙跳5×6米 + 台阶交换跳3×20','跳绳双摇/快速单摇3分钟×3组','立定跳远测试×6次（记录成绩）','慢跑+全身拉伸','休息']},
+  strength:{nm:'力量（引体/仰卧起坐）', days:['引体：弹力带辅助×5组×力竭-2次 + 悬垂举腿3×8','俯卧撑3×12 + 反向划船（桌下）3×10','仰卧起坐计时1分钟×3组（间隔3分钟）+ 平板支撑3×45秒','弹力带辅助引体×5组 + 负重提踵3×15','核心循环：卷腹/俄罗斯转体/登山跑 各3×30秒','轻松活动20分钟','休息']},
+  flex:  {nm:'柔韧（坐位体前屈）', days:['静态拉伸：坐位体前屈保持30秒×6 + 站姿体前屈×4','腘绳肌拉伸（垫上勾脚前压）每侧45秒×4','瑜伽下犬式+猫式伸展 各8次呼吸×3','泡沫轴放松大腿后侧和小腿 10分钟','坐位体前屈测试×3次（记录）','轻松慢跑+全身拉伸','休息']},
+  weight:{nm:'减重有氧', days:['快走+慢跑交替40分钟（心率控制在最大心率60–70%）','游泳或椭圆机40分钟（保护膝盖）','力量循环：自重深蹲/俯卧撑/划船 各3组 + 快走20分钟','慢跑35分钟 + 饮食打卡','骑行或爬楼40分钟','快走60分钟（边听音乐/播客）','休息 + 本周体重记录与复盘']},
+  gentle:{nm:'保健轻运动', days:['太极拳/八法五步复习 20分钟','散步30分钟 + 呼吸练习','瑜伽基础拉伸 20分钟','太极动作巩固 20分钟','散步30分钟','呼吸训练（腹式呼吸5分钟）+ 拉伸','休息']}
+};
+function roiList(){
+  const p = getProfile();
+  const rows = window.__natRows||[], crows = window.__courseRows||[];
+  const all = rows.filter(r=>!r.noGap);
+  crows.forEach(r=>{ all.push({k:r.k, nm:r.nm, sc:r.sc, val:r.val, table:r.table, w:(p.courseFull? r.w*1.5 : r.w)}); });
+  const COST = {lung:1.0, sitr:1.0, situp:1.1, pull:1.2, endur:1.3, jump:1.5, runLD:1.6, run50:1.8, shuttle:1.8};
+  const list = [];
+  all.forEach(r=>{
+    const idx = r.table.findIndex(x=>x[0]===r.sc);
+    if(idx<=0 || r.sc>=100) return;
+    const gain = r.w/100*(r.table[idx-1][0]-r.sc);
+    const gap = Math.abs(r.table[idx-1][1+(p.upper||0)] - r.val);
+    list.push({k:r.k, nm:r.nm, sc:r.sc, gain:+gain.toFixed(1), gap:+gap.toFixed(1), roi:+((gain*(1-r.sc/100))/(COST[r.k]||1.5)).toFixed(3)});
+  });
+  return list.sort((a,b)=>b.roi-a.roi);
+}
+function daysUntil(d){
+  if(!d) return 0;
+  return Math.ceil((new Date(d) - new Date(new Date().toISOString().slice(0,10)))/86400000);
+}
+const PMAP = {runLD:'endur', endur:'endur', run50:'sprint', shuttle:'sprint', jump:'jump', pull:'strength', situp:'strength', sitr:'flex', lung:'flex'};
+function genPlanUI(){
+  const p = getProfile();
+  const area = $('plan-area');
+  if(p.track==='health'){
+    const wks = weeksUntil(p.date)||4;
+    let html = `<div class="card"><span class="ib g"><svg class="ic ic-lg"><use href="#i-people"/></svg></span>体育保健班专属计划<div class="warnbox">你的期末成绩按<b>出勤情况（0–65分）</b>评定，本计划目标是：稳定出勤、维持身体状态、避免运动损伤。</div></div>`;
+    for(let w=1;w<=Math.min(wks,8);w++) html += weekCard(w, '出勤 + 轻运动', FOCUS.gentle.days, '出勤是第一得分点，别缺课！', '#7a5ea8');
+    area.innerHTML = html; return;
+  }
+  const rank = roiList();
+  if(!rank.length){
+    area.innerHTML = '<div class="card"><div class="warnbox">请先到「成绩测评」录入成绩并点击「确认」，才能生成针对性计划。以下为通用备选计划。</div></div>' + genericPlan(p);
+    return;
+  }
+  const days = daysUntil(p.date);
+  /* ===== 距考试 ≤ 2周：输出逐日冲刺计划 ===== */
+  if(days <= 14){
+    const D = Math.max(3, Math.min(14, days||10));
+    let html = `<div class="card"><span class="ib r"><svg class="ic ic-lg"><use href="#i-run"/></svg></span>考前冲刺 · ${D} 天逐日计划
+      <div class="tip">距考试仅 <b>${days} 天</b>（≤2周），已切换为<b>逐日计划</b>。项目按<b>练习性价比</b>排序——优先练"提分最快"的项目。</div>
+      <table><tr><th>性价比排名</th><th>项目</th><th>当前得分</th><th>提升一档可+总分</th></tr>
+      ${rank.slice(0,4).map((r,i)=>`<tr><td>${i+1}</td><td>${r.nm}</td><td>${r.sc}分</td><td><b>+${r.gain}分</b></td></tr>`).join('')}</table></div>`;
+    const seq = [];
+    rank.slice(0,3).forEach((r,i)=>{ const rep = i===0?3: i===1?2:1; for(let x=0;x<rep;x++) seq.push(r.k); });
+    let di = 0;
+    for(let d=1; d<=D; d++){
+      const left = D - d;
+      let txt, color, label;
+      if(left<=1){ txt='休息＋充足睡眠；只做动态热身保持感觉，不做力量训练；检查装备与证件（<b>玉兰卡/身份证</b>）'; color='#2e9e5b'; label='赛前调整'; }
+      else if(left===2){ txt='减量训练：动态热身＋各弱项做2–3次"找感觉"（70%强度）＋充分拉伸，早睡'; color='#2e9e5b'; label='赛前调整'; }
+      else {
+        const k = seq[di % seq.length]; di++;
+        const tpl = FOCUS[PMAP[k]||'endur'];
+        txt = tpl.days[di % 5];
+        color = '#d8433a';
+        label = tpl.nm;
+      }
+      html += `<div class="plan-week"><div class="hd" style="background:${color}"><span>第 ${d} 天</span><span class="focus">${label}</span></div>
+        <div style="padding:10px 14px;font-size:13.5px">${txt}</div></div>`;
+    }
+    html += `<div class="card"><div class="tip">💡 冲刺期要点：训练前后必做热身/拉伸；每天睡足7–8小时；考前3天不练到力竭，储备体能。</div></div>`;
+    area.innerHTML = html; return;
+  }
+  /* ===== 距考试 > 2周：输出周计划 ===== */
+  const wks = weeksUntil(p.date)||6;
+  const names = {endur:'耐力跑', sprint:'速度', jump:'爆发力', strength:'力量', flex:'柔韧', weight:'减重'};
+  const seen = [];
+  rank.forEach(r=>{ if(!seen.includes(r.k)) seen.push(r.k); });
+  let focusKeys = seen.slice(0,2).map(k=>PMAP[k]);
+  if(p.track==='fit') focusKeys = ['weight','endur'];
+  if(focusKeys.length<2) focusKeys.push(focusKeys[0]==='endur'?'jump':'endur');
+  const phases = ['基础适应','强化提升','专项冲刺','赛前调整'];
+  let html = `<div class="card"><span class="ib "><svg class="ic ic-lg"><use href="#i-run"/></svg></span>${wks} 周专属计划（按练习性价比定制）
+    <table><tr><th>优先级</th><th>项目</th><th>当前得分</th><th>提升一档可+总分</th><th>性价比</th></tr>
+    ${rank.slice(0,5).map((r,i)=>`<tr><td>${i+1}</td><td>${r.nm}</td><td>${r.sc}分</td><td>+${r.gain}分</td><td>${'★'.repeat(Math.max(1,5-i))}</td></tr>`).join('')}</table>
+    <p class="muted">性价比 = 预计提分 ÷ 训练难度（柔韧/肺活量最易见效，短跑/爆发力类较难速成）。距考试 ${days} 天（>2周），按周推进。</p>
+    <div class="pill-row">${focusKeys.map(k=>`<span class="tag">主攻：${names[k]}</span>`).join('')}
+    ${p.track==='fit'?'<span class="tag warn">减重模式</span>':'<span class="tag ok">标准模式</span>'}</div></div>`;
+  for(let w=1; w<=wks; w++){
+    const prog = w/wks;
+    const phase = prog<=0.33?0: prog<=0.66?1: prog<1?2:3;
+    let daysA, focusTxt, tip;
+    if(phase===3){
+      daysA = ['慢跑20分钟+4×50米加速跑','休息（充足睡眠）','动态热身+立定跳远×5次找感觉','慢跑15分钟+目标配速跑1公里×1组','休息（拉伸、早睡）','测试日前后：按考前须知执行','轻松散步30分钟'];
+      focusTxt = '赛前调整 · 减量保状态'; tip = '本周训练量减半，重点：睡眠、饮食、熟悉动作节奏。不练到力竭！';
+      html += weekCard(w, focusTxt, daysA, tip, '#2e9e5b');
+    } else {
+      const a = FOCUS[focusKeys[0]], b = FOCUS[focusKeys[1]]||FOCUS.endur;
+      daysA = [...a.days.slice(0,3), ...b.days.slice(0,2), '轻松慢跑20分钟+全身拉伸','休息'];
+      focusTxt = phases[phase]+' · 主攻'+names[focusKeys[0]]+' / 辅攻'+names[focusKeys[1]];
+      tip = p.track==='fit' ? '减重要点：三餐规律、戒含糖饮料和夜宵，主食减1/3，蛋白质保够（鸡蛋/鸡胸/牛奶）。' : '每次训练前动态热身10分钟，训练后静态拉伸10分钟。组间休息充分，动作质量优先。';
+      const color = phase===0?'#1e56a8':phase===1?'#e8890c':'#d8433a';
+      html += weekCard(w, focusTxt, daysA, tip, color);
+    }
+  }
+  area.innerHTML = html;
+}
+function weeksUntil(d){
+  if(!d) return 0;
+  const diff = Math.ceil((new Date(d) - new Date(new Date().toISOString().slice(0,10)))/86400000/7);
+  return diff>0?diff:6;
+}
+function weekCard(w, focus, days, tip, color){
+  const names=['周一','周二','周三','周四','周五','周六','周日'];
+  return `<div class="plan-week"><div class="hd" style="background:${color}"><span>第 ${w} 周</span><span class="focus">${focus}</span></div>
+  <table>${days.map((d,i)=>`<tr><td style="width:52px;color:${color};font-weight:bold">${names[i]}</td><td>${d}</td></tr>`).join('')}</table>
+  <div style="padding:8px 14px"><div class="tip">💡 ${tip}</div></div></div>`;
+}
+function genericPlan(p){
+  let html='';
+  for(let w=1;w<=4;w++){
+    html += weekCard(w, '通用综合素质', ['慢跑30分钟+蛙跳3组','间歇400米×4+仰卧起坐2组','立定跳远练习10次+核心20分钟','50米冲刺×5+引体/俯卧撑3组','柔韧拉伸20分钟+轻松跑','球类/游泳等兴趣运动40分钟','休息'], '通用计划，录入成绩后可生成更有针对性的方案。','#1e56a8');
+  }
+  return html;
+}
+
+/* ================= 动作教室 ================= */
+const SKILLS = [
+  {t:'50米跑', ic:'i-sprint', kw:'50米跑 起跑 教学',
+   pts:['采用站立式起跑：两脚前后开立，重心前压，听哨后前脚用力蹬地','起跑后前15米身体前倾、小步高频，逐渐抬起进入途中跑','途中跑：摆臂以肩为轴前后摆动，前不露肘后不露手','冲刺：到终点线前不减速，过线后再缓冲（"冲线"要多跑5米）'],
+   errs:['起跑后立刻抬头挺身 → 头2步保持压低重心','全脚掌着地 → 前脚掌着地，脚踝有弹性','摆臂左右晃 → 摆臂方向前后，肘关节约90°','临近终点减速 → 眼睛看过线后再放松'],
+   checks:['起跑瞬间：双脚是否蹬地发力，还是站直了才起步？','前15米：躯干是否保持前倾、步频是否够快？','途中跑：摆臂是否前后方向、有无左右晃动？','着地：是否前脚掌着地、脚踝有弹性？','终点前：最后10米是否保持速度压线？']},
+  {t:'1000米跑（男）', ic:'i-run', g:'m', kw:'1000米跑 训练 配速',
+   pts:['起跑：站立式，抢占有利位置但不冲第一集团','途中跑：上体正直稍前倾，三步一呼三步一吸，节奏固定','跟跑战术：跟住比自己成绩略好的同学，保持1–2米距离','最后300–400米逐渐提速，最后150米全力冲刺'],
+   errs:['一起跑就猛冲 → 前200米控制在目标配速内','呼吸紊乱张嘴大喘 → 舌抵上颚、鼻吸口呼，节奏别乱','弯道超越贴内线挤撞 → 直道再加速超越','冲线后立刻坐下 → 慢走5分钟再停，防重力性休克'],
+   checks:['起跑：前200米是否冲得太快？','途中跑：呼吸节奏是否固定（三步一呼一吸）？','姿态：上体是否正直稍前倾、有没有坐着跑？','战术：是否跟住了目标对手？','冲刺：最后150米是否还有提速能力？']},
+  {t:'800米跑（女）', ic:'i-run', g:'f', kw:'800米跑 训练 配速',
+   pts:['起跑：站立式，抢占有利位置但不冲第一集团','途中跑：上体正直稍前倾，三步一呼三步一吸，节奏固定','跟跑战术：跟住比自己成绩略好的同学，保持1–2米距离','最后300米逐渐提速，最后150米全力冲刺'],
+   errs:['一起跑就猛冲 → 前200米控制在目标配速内','呼吸紊乱张嘴大喘 → 舌抵上颚、鼻吸口呼，节奏别乱','弯道超越贴内线挤撞 → 直道再加速超越','冲线后立刻坐下 → 慢走5分钟再停，防重力性休克'],
+   checks:['起跑：前200米是否冲得太快？','途中跑：呼吸节奏是否固定？','摆臂：是否放松、以肩为轴前后摆？','战术：是否跟住了目标对手？','冲刺：最后150米是否逐渐提速？']},
+  {t:'立定跳远', ic:'i-jump', kw:'立定跳远 教学',
+   pts:['预备：双脚与肩同宽，脚尖正对前方，摆臂2–3次找节奏','起跳：半蹲至大腿约与地面45°，双臂用力向前上方摆，蹬地角约45°','腾空：空中收腹举腿，大腿向胸口靠','落地：小腿前伸，脚跟先触垫，膝盖顺势弯曲前压，重心前移'],
+   errs:['起跳时低头看地 → 目视前方2–3米处','只靠腿不摆臂 → 手臂带动身体，"手到脚到"','落地向后坐手撑地 → 落地瞬间用力向前收腹举腿','踩线犯规 → 起跳时脚尖离线留一指距离'],
+   checks:['预摆：摆臂与屈膝是否协调同步？','起跳角：蹬地方向是否约45°向前上方？','腾空：是否做出收腹举腿动作？','落地：小腿是否前伸、有没有后坐手撑地？','是否踩线？']},
+  {t:'坐位体前屈', ic:'i-sit', kw:'坐位体前屈 技巧',
+   pts:['测试前充分热身，做几组慢速体前屈预热','推板时匀速慢推，呼气下压，下巴找膝盖','双手中指指尖同时触板匀速前推，到极限保持1–2秒'],
+   errs:['猛然发力弹震 → 匀速推，突然发力容易拉伤且无效','膝盖弯曲 → 双膝伸直贴地，可请同伴按住膝盖','憋气 → 呼气时下压幅度更大','平时不练考前突击 → 每天睡前拉伸3分钟，4周见效'],
+   checks:['膝盖：测试中是否始终伸直？','推板：是否匀速慢推而不是爆发式？','呼吸：下压时是否配合呼气？','准备：测试前是否做了充分热身？']},
+  {t:'引体向上（男）', ic:'i-pull', g:'m', kw:'引体向上 零基础教学',
+   pts:['正握略宽于肩，full hang 沉肩启动','用背阔肌发力："挺胸—肘向下向后—下巴过杠"','下放控制速度，不完全放松借力弹','呼吸：上拉呼气，下放吸气'],
+   errs:['只靠手臂硬拉 → 想象"肘部往下插口袋"，用背发力','甩腿蹬腰借力 → 幅度大会被判无效，核心收紧','下巴没过杠 → 宁可少做标准的，不贪数量','一上杠就猛做 → 先挂杠沉肩激活10秒，规划节奏'],
+   checks:['握距：是否正握、略宽于肩？','启动：是否先沉肩再拉？','发力：主要用背还是只用手臂？','幅度：下巴是否过杠、下放是否到位？','身体：是否借甩腿摆动？']},
+  {t:'一分钟仰卧起坐（女）', ic:'i-situp', g:'f', kw:'仰卧起坐 一分钟 技巧',
+   pts:['双手抱耳侧（不要抱后脑），屈膝约90°','起身时用腹部卷起，肘触膝/双肩胛离垫才算有效','下落时肩胛触垫再起，动作完整','节奏分配：前30秒55–60%速度，最后15秒冲刺'],
+   errs:['双手抱头用力拉颈椎 → 手只是扶耳侧，脖子放松','起身不完整不计次数 → 宁慢勿假，动作到位','前面太快后面没劲 → 严格按节奏分配','臀部离垫借力 → 腰贴垫，靠腹肌卷起'],
+   checks:['手位：是否抱头猛拉颈椎？','幅度：肩胛是否离垫、动作是否完整？','节奏：前30秒是否控制速度？','腰部：是否贴垫、没有臀部离垫借力？']},
+  {t:'肺活量', ic:'i-lung', kw:'肺活量测试 吹气技巧',
+   pts:['测试前先做2–3次深呼吸预通气','吸气：鼻口同吸，弯腰→挺身把肺吸满到极限','吹气：嘴贴紧吹嘴，身体前倾匀速持久吹，像"吹蜡烛但不吹灭"','最后收腹低头把残余气体挤出来'],
+   errs:['猛吹一口气 → 气流太快，传感器读数低且提前没气','漏气 → 嘴唇包紧吹嘴，鼻子不漏','吸气不充分 → 先弯腰呼净，再充分吸气'],
+   checks:['预通气：测试前是否做了几次深呼吸？','吸气：是否吸到极限？','吹气：气流是否匀速持久、不猛吹？','漏气：嘴唇是否包紧吹嘴？','收尾：最后是否收腹把余气挤出？']},
+  {t:'4×10米折返跑', ic:'i-shuttle', kw:'折返跑 技巧',
+   pts:['起跑站立式，前几步压低重心','接近折返线2–3米开始降步幅，转身侧用手触区','转身时异侧脚用力蹬地转向，压低重心防滑','回程逐渐加速到全速'],
+   errs:['到线前不减速撞线急停 → 提前降速，转身流畅比猛冲快','转身直着转 → 侧身压低，像篮球防守滑步转向','触碰不到折返区 → 平时练好距离感，标记2米降速点'],
+   checks:['降速：是否提前2–3米开始降步幅？','转身：是否侧身压低、蹬地转向？','重心：转身时是否稳、有没有冲过头？','回程：是否尽快加速到全速？']}
+];
+function vidBtns(kw){
+  const k = encodeURIComponent(kw);
+  return `<div class="pill-row">
+    <a class="pill" target="_blank" href="https://search.bilibili.com/all?keyword=${k}">📺 B站教学</a>
+    <a class="pill" target="_blank" href="https://www.douyin.com/search/${k}">🎵 抖音教学</a>
+    <a class="pill" target="_blank" href="https://www.xiaohongshu.com/search_result?keyword=${k}">📕 小红书教学</a>
+  </div>`;
+}
+function previewUp(i){
+  const f = $('up-'+i).files[0]; if(!f) return;
+  const url = URL.createObjectURL(f);
+  $('upv-'+i).innerHTML = f.type.startsWith('video') ? '<video src="'+url+'" controls></video>' : '<img src="'+url+'">';
+}
+function analyzeUp(i){
+  const sk = SKILLS[i];
+  const f = $('up-'+i).files[0];
+  const box = $('an-'+i);
+  if(!f){ box.innerHTML = '<div class="warnbox">请先选择你的动作视频或照片。</div>'; return; }
+  box.innerHTML = '<div class="tip"><b>🤖 AI 动作分析 · '+sk.t+'</b><br>已接收你的'+(f.type.startsWith('video')?'视频':'照片')+'，请对照以下检查点逐项自查并纠正：</div>'
+    + '<ul style="padding-left:18px;font-size:13px">' + sk.checks.map(c=>'<li>'+c+'</li>').join('') + '</ul>'
+    + '<div class="fix">✔ 重点纠正：' + sk.errs[0].split(' → ')[1] + '。建议每次练习都录一段视频，与上次对比观察改善。</div>'
+    + '<p class="muted">（演示版：接入多模态大模型后可自动识别视频/照片中的动作问题并给出个性化建议）</p>';
+}
+function renderSkills(){
+  const g = getProfile().gender; // 按性别显示项目
+  $('skill-area').innerHTML = SKILLS.map((s,i)=>({s,i}))
+    .filter(x=>!x.s.g || x.s.g===g)
+    .map(({s,i})=>`
+    <div class="acc"><div class="hd" onclick="tg(this)"><span class="ib"><svg class="ic ic-lg"><use href="#${s.ic}"/></svg></span>${s.t}<span>▾</span></div><div class="bd">
+    <b style="font-size:13.5px;color:var(--blue-d)">✅ 技术要点</b>
+    <ul>${s.pts.map(x=>`<li>${x}</li>`).join('')}</ul>
+    <b style="font-size:13.5px;color:var(--red)">❌ 常见错误 → 纠正方法</b>
+    ${s.errs.map(e=>{const [a,b]=e.split(' → ');return `<div class="fix"><b>${a}</b><br>${b?('✔ '+b):''}</div>`;}).join('')}
+    <b style="font-size:13.5px;color:var(--blue-d)"><svg class="ic"><use href="#i-play"/></svg> 教学小视频</b>
+    ${vidBtns(s.kw)}
+    <div class="upzone">
+      <b><svg class="ic"><use href="#i-up"/></svg> 上传你的动作视频 / 照片，AI 帮你更正动作</b><br>
+      <span class="muted">支持拍摄一段自己的动作视频或拍照上传（仅在本机预览，不会上传服务器）</span><br>
+      <input type="file" id="up-${i}" accept="image/*,video/*" style="margin-top:6px" onchange="previewUp(${i})">
+      <div id="upv-${i}"></div>
+      <button class="btn sm" style="margin-top:8px" onclick="analyzeUp(${i})">🤖 AI 动作分析与建议</button>
+      <div id="an-${i}"></div>
+    </div>
+    </div></div>`).join('');
+}
+renderSkills();
+
+/* ================= 成绩档案（分项目记录 + 分项目折线图） ================= */
+function recKey(){ return 'fitagent_u_' + (window.__curUser || 'guest') + '_records'; }
+function getRecs(){ try{return JSON.parse(localStorage.getItem(recKey())||'[]');}catch(e){return [];} }
+function saveRecs(r){ localStorage.setItem(recKey(), JSON.stringify(r)); }
+
+/* 记录字段：按性别、年级动态生成（与测评页一致） */
+function recFields(){
+  const p = getProfile();
+  const f = [];
+  NAT_ITEMS.forEach(it=>{
+    if(it.g && it.g!==p.gender) return;
+    f.push({id:'nat-'+it.k, nm:it.nm, type:it.type, k:it.k, nat:true});
+  });
+  COURSE_ITEMS.forEach(it=>{
+    const need = p.courseFull || (it.k==='endur'||it.k==='jump');
+    if(!need) return;
+    f.push({id:'ci-'+it.k, nm:(it.k==='endur'? endurShort(p.gender):it.nm)+'（课程）', type:it.type, k:it.k, nat:false});
+  });
+  return f;
+}
+function buildRecInputs(){
+  const f = recFields();
+  let a='', b='';
+  f.forEach(x=>{
+    const cell = '<div><label>'+x.nm+'</label><input id="rc-'+x.id+'" placeholder="'+(x.type==='time'?'4:32':'')+'"></div>';
+    if(x.nat) a+=cell; else b+=cell;
+  });
+  $('rec-nat').innerHTML = a;
+  $('rec-course-area').style.display = b? '':'none';
+  $('rec-course').innerHTML = b;
+  buildChartPick();
+}
+/* 按国家体测权重自动算本次总分 */
+function calcTotalFrom(kv){
+  const p = getProfile();
+  let sum=0, w=0;
+  recFields().forEach(f=>{
+    if(!f.nat) return;
+    const v = kv[f.id]; if(v==null || isNaN(v)) return;
+    const tbl = NAT[p.gender][f.k];
+    const sc = scoreFrom(tbl, v, p.upper);
+    const wt = (f.k==='run50'||f.k==='runLD')?20 : (f.k==='lung'?15:10);
+    sum += sc*wt; w += wt;
+  });
+  const b = bmi();
+  if(b!=null){ const bsc = b>=28?60:((b>=24||b<17.9)?80:100); sum += bsc*15; w += 15; }
+  return w? +(sum/w).toFixed(1) : null;
+}
+function addRecord(){
+  const d = $('r-date').value || new Date().toISOString().slice(0,10);
+  const note = $('r-note').value.trim();
+  const kv = {}, items = {};
+  let any = false;
+  recFields().forEach(f=>{
+    const raw = $('rc-'+f.id).value;
+    if(!raw) return;
+    const v = f.type==='time'? parseTime(raw) : parseFloat(raw);
+    if(isNaN(v)) return;
+    kv[f.id] = v; items[f.nm] = v; any = true;
+  });
+  let t = parseFloat($('r-total').value);
+  if(isNaN(t)) t = calcTotalFrom(kv);
+  if(!any && isNaN(t)){ alert('请至少填写一个项目成绩或总分'); return; }
+  const recs = getRecs();
+  recs.push({d, t: (t==null||isNaN(t))?null:t, note, items, kv});
+  recs.sort((a,b)=>a.d.localeCompare(b.d));
+  saveRecs(recs);
+  recFields().forEach(f=>{ $('rc-'+f.id).value=''; });
+  $('r-total').value=''; $('r-note').value='';
+  saveProfile();
+  renderRecords();
+}
+function delRecord(i){
+  const recs = getRecs(); recs.splice(i,1); saveRecs(recs); renderRecords();
+}
+function renderRecords(){
+  const recs = getRecs();
+  const list = $('rec-list');
+  if(!recs.length){
+    list.innerHTML='<p class="muted">还没有记录，快去记录第一次成绩吧！</p>';
+    $('chart').innerHTML=''; $('chart-legend').innerHTML=''; $('chart-table').innerHTML=''; return;
+  }
+  list.innerHTML = recs.map((r,i)=>`<div class="rec-item" style="flex-wrap:wrap;align-items:flex-start">
+    <span><svg class="ic"><use href="#i-cal"/></svg> ${r.d}</span>
+    <span>${r.t!=null?'<b style="color:'+gradeColor(r.t)+'">'+r.t+' 分</b>':''} <span class="muted">${r.note||''}</span></span>
+    <button class="btn sec sm" onclick="delRecord(${i})">删除</button>
+    <span class="muted" style="flex-basis:100%;font-size:12.5px;line-height:1.5">${r.items?Object.entries(r.items).map(([k,v])=>k+'：'+v).join('　·　'):'<i>（旧记录，无分项数据）</i>'}</span>
+  </div>`).join('');
+  drawChart();
+}
+/* ---- 分项目折线图 ---- */
+let chartMetric = 'total';
+function buildChartPick(){
+  const f = recFields();
+  let html = '<div class="pill on" data-m="total" onclick="pickMetric(\'total\')"><svg class="ic"><use href="#i-chart"/></svg> 总分</div>';
+  f.forEach(x=>{ html += '<div class="pill" data-m="'+x.id+'" onclick="pickMetric(\''+x.id+'\')">'+x.nm+'</div>'; });
+  $('chart-pick').innerHTML = html;
+}
+function pickMetric(m){
+  chartMetric = m;
+  document.querySelectorAll('#chart-pick .pill').forEach(p=>p.classList.toggle('on', p.dataset.m===m));
+  drawChart();
+}
+function isLowerBetter(id){
+  return /run50|runLD|endur|shuttle/.test(id||'');
+}
+function drawChart(){
+  const recs = getRecs();
+  const svg = $('chart'), lg = $('chart-legend'), tb = $('chart-table');
+  const fields = recFields();
+  const isTotal = (chartMetric==='total');
+  const f = fields.find(x=>x.id===chartMetric);
+  const nm = isTotal ? '国家体测总分' : (f? f.nm : chartMetric);
+  const lower = isLowerBetter(chartMetric);
+  const pts = recs.map(r=>{
+    const v = isTotal ? r.t : ((r.kv && r.kv[chartMetric]!=null)? r.kv[chartMetric] : null);
+    return (v==null)? null : {d:r.d, v:v};
+  }).filter(Boolean);
+  // 表格
+  tb.innerHTML = pts.length ? ('<tr><th>日期</th><th>'+nm+'</th>'+(isTotal?'<th>等级</th>':'<th>单项分</th>')+'</tr>'
+    + pts.map(q=>{
+      let extra = '';
+      if(isTotal) extra = '<td>'+gradeName(q.v)+'</td>';
+      else if(f && f.nat){
+        const sc = scoreFrom(NAT[getProfile().gender][f.k], q.v, getProfile().upper);
+        extra = '<td>'+sc+' 分</td>';
+      } else extra = '<td>—</td>';
+      return '<tr><td>'+q.d+'</td><td><b>'+(isTotal? q.v : (f&&f.type==='time'? fmtTime(q.v): q.v))+'</b></td>'+extra+'</tr>';
+    }).join('')) : '';
+  if(pts.length<2){
+    svg.innerHTML = '<text x="340" y="90" text-anchor="middle" fill="#8aa" font-size="13">「'+nm+'」记录达到 2 次后显示趋势图</text>';
+    lg.innerHTML=''; return;
+  }
+  const W=680,H=180,pl=52,pr=18,pt=18,pb=26;
+  const vs = pts.map(p=>p.v);
+  let vmin = Math.min(...vs), vmax = Math.max(...vs);
+  if(isTotal){ vmin = Math.min(vmin,59); vmax = Math.max(vmax,100); }
+  const pad = (vmax-vmin)||Math.max(1,Math.abs(vmax)*0.1);
+  vmin -= pad*0.12; vmax += pad*0.12;
+  const xs = i => pl + i*(W-pl-pr)/(pts.length-1);
+  const yv = v => pt + (vmax-v)*(H-pt-pb)/(vmax-vmin);
+  let g='';
+  // 参考线：总分画 60/80/90
+  if(isTotal){
+    [[90,'优秀'],[80,'良好'],[60,'及格']].forEach(([lv,lbn])=>{
+      if(lv>=vmin && lv<=vmax){
+        g += '<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+yv(lv)+'" y2="'+yv(lv)+'" stroke="#dce6f2" stroke-dasharray="4 3"/>'
+          + '<text x="'+(pl-6)+'" y="'+(yv(lv)+4)+'" text-anchor="end" font-size="10" fill="#8aa">'+lv+' '+lbn+'</text>';
+      }
+    });
+  } else {
+    g += '<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+yv(vmin+ (vmax-vmin)*0.06)+'" y2="'+yv(vmin+(vmax-vmin)*0.06)+'" stroke="#eef3fa"/>';
+  }
+  let path = pts.map((q,i)=>(i?'L':'M')+xs(i).toFixed(1)+','+yv(q.v).toFixed(1)).join(' ');
+  g += '<path d="'+path+'" fill="none" stroke="#1e56a8" stroke-width="2.5"/>';
+  pts.forEach((q,i)=>{
+    const lbl = isTotal ? q.v : (f&&f.type==='time'? fmtTime(q.v) : q.v);
+    g += '<circle cx="'+xs(i)+'" cy="'+yv(q.v)+'" r="4" fill="#d8433a"/>'
+      + '<text x="'+xs(i)+'" y="'+(yv(q.v)-9)+'" text-anchor="middle" font-size="10.5" fill="#22314a" font-weight="bold">'+lbl+'</text>'
+      + '<text x="'+xs(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9.5" fill="#8aa">'+q.d.slice(5)+'</text>';
+  });
+  svg.innerHTML = g;
+  const first = pts[0].v, last = pts[pts.length-1].v;
+  const delta = +(last-first).toFixed(2);
+  const better = lower? (delta<0) : (delta>0);
+  lg.innerHTML = '<span>━ '+nm+'（共 '+pts.length+' 次记录）</span><i style="background:#1e56a8"></i>折线 <i style="background:#d8433a"></i>记录点'
+    + '　|　首末变化：<b style="color:'+(better?'#2e9e5b':'#d8433a')+'">'+(delta>0?'+':'')+delta+'</b>'
+    + (lower? '（时间类项目：数值下降＝进步）' : '（数值上升＝进步）');
+}
+buildRecInputs();
+renderRecords();
+
+function renderWarmVideos(){
+  const items = [['体测热身 动态热身跟练','全套热身跟练'],['开合跳 高抬腿 热身','开合跳+高抬腿'],['跑前动态拉伸 跟练','跑前动态拉伸']];
+  $('warmup-videos').innerHTML = items.map(([kw,lb])=>{
+    const k = encodeURIComponent(kw);
+    return `<div class="item-row"><span class="nm">${lb}</span>
+      <span style="flex:1"><a class="pill" target="_blank" href="https://search.bilibili.com/all?keyword=${k}">📺 B站</a>
+      <a class="pill" target="_blank" href="https://www.douyin.com/search/${k}">🎵 抖音</a>
+      <a class="pill" target="_blank" href="https://www.xiaohongshu.com/search_result?keyword=${k}">📕 小红书</a></span></div>`;
+  }).join('');
+}
+const TIPTEXT = {
+  run50:'起跑后前两步压低重心别抬头，全程前脚掌着地、摆臂前后摆；终点线前不减速，过线后再收。',
+  jump:'摆臂2–3次找节奏，起跳角约45°向前上方；空中收腹举腿，落地小腿前伸、脚跟先触垫。跳2次取最好，别踩线。',
+  sitr:'考前做几组慢速体前屈预热；推板时匀速慢推并呼气，双膝伸直贴地，到极限保持1–2秒。每天睡前拉伸3分钟，4周见效。',
+  lung:'先深吸2–3次预通气，鼻口同时吸到极限；吹气时身体前倾、匀速持久吹，最后收腹低头把余气挤出。吹2次取最好。',
+  runLD:'前200米别冲，保持三步一呼三步一吸；跟住比自己略快的同学1–2米，最后300–400米提速、150米全力冲刺。',
+  pull:'正握略宽于肩，先沉肩激活背阔肌；上拉想象"肘往下插口袋"用背发力，下巴过杠，核心收紧不甩腿。',
+  situp:'双手扶耳侧不抱头，动作做满（肘触膝 / 肩胛离垫）；前30秒控速留力，最后15秒冲刺。',
+  shuttle:'接近折返线提前2–3米降步幅，侧身压低重心用手触区，异侧脚蹬地转向，回程尽快加速到全速。'
+};
+const TIPMETA = {
+  run50:{nm:'50米跑', ic:'i-sprint'}, jump:{nm:'立定跳远', ic:'i-jump'}, sitr:{nm:'坐位体前屈', ic:'i-sit'},
+  lung:{nm:'肺活量', ic:'i-lung'}, runLD:{nm:'1000米跑', ic:'i-run'}, runLDF:{nm:'800米跑', ic:'i-run'},
+  pull:{nm:'引体向上', ic:'i-pull'}, situp:{nm:'一分钟仰卧起坐', ic:'i-situp'}, shuttle:{nm:'4×10米折返跑', ic:'i-shuttle'}
+};
+function tipItemKeys(){
+  const p = getProfile();
+  const keys = ['run50','jump','sitr','lung'];
+  keys.push(p.gender==='m' ? 'runLD' : 'runLDF');
+  keys.push(p.gender==='m' ? 'pull' : 'situp');
+  if(p.is2026) keys.push('shuttle');
+  return keys;
+}
+function renderTipVideos(){
+  const items = tipItemKeys().map(k=>[k, TIPMETA[k].nm]);
+  $('tips-videos').innerHTML = items.map(([k,lb])=>{
+    const kw = encodeURIComponent(lb + ' 技巧 教学');
+    return `<a class="pill" target="_blank" href="https://search.bilibili.com/all?keyword=${kw}"><svg class="ic"><use href="#${TIPMETA[k].ic}"/></svg> ${lb}·B站</a>
+      <a class="pill" target="_blank" href="https://www.douyin.com/search/${kw}"><svg class="ic"><use href="#${TIPMETA[k].ic}"/></svg> ${lb}·抖音</a>`;
+  }).join('');
+}
+function renderTipTexts(){
+  const items = tipItemKeys();
+  $('tips-text').innerHTML = '<div class="grid g2">' + items.map(k=>{
+    const m = TIPMETA[k];
+    const key = (k==='runLDF')?'runLD':k;
+    return `<div class="item-row" style="align-items:flex-start">
+      <span class="ib"><svg class="ic ic-lg"><use href="#${m.ic}"/></svg></span>
+      <span style="flex:1"><b style="font-size:13.5px">${m.nm}</b><br><span style="font-size:13px;color:#4a5b74">${TIPTEXT[key]}</span></span>
+    </div>`;
+  }).join('') + '</div>';
+}
+renderWarmVideos();
+renderTipVideos();
+renderTipTexts();
+$('f-date').value = '2026-11-05'; // 默认为课程耐力跑考试（十月末至十一月初）
+renderRecords();
+
+/* ================= 账号系统（手机号 + 用户名 + 密码，数据按账号记忆） ================= */
+function hashPwd(pwd, salt){
+  let h = 5381; const str = pwd + '|' + salt;
+  for(let i=0;i<str.length;i++){ h = ((h<<5) + h + str.charCodeAt(i)) >>> 0; }
+  return h.toString(36);
+}
+function getUsers(){ try{ return JSON.parse(localStorage.getItem('fitagent_users')||'{}'); }catch(e){ return {}; } }
+function saveUsers(u){ localStorage.setItem('fitagent_users', JSON.stringify(u)); }
+function showMsg(html){ $('lg-msg').innerHTML = html; }
+function profKey(){ return 'fitagent_u_' + (window.__curUser || 'guest') + '_profile'; }
+function doRegister(){
+  const phone = ($('lg-phone').value||'').trim();
+  const name = ($('lg-name').value||'').trim();
+  const pwd = $('lg-pwd').value||'';
+  if(!/^1\d{10}$/.test(phone)) return showMsg('<div class="warnbox">请输入正确的11位手机号</div>');
+  if(!name) return showMsg('<div class="warnbox">请填写用户名</div>');
+  if(pwd.length < 6) return showMsg('<div class="warnbox">密码至少6位</div>');
+  const users = getUsers();
+  if(users[phone]) return showMsg('<div class="warnbox">该手机号已注册，请直接登录</div>');
+  const salt = Math.random().toString(36).slice(2,8);
+  users[phone] = {name, salt, pwd: hashPwd(pwd, salt), created: new Date().toISOString().slice(0,10)};
+  saveUsers(users);
+  migrateLegacy(phone);
+  enterApp(phone, name);
+}
+function doLogin(){
+  const phone = ($('lg-phone').value||'').trim();
+  const name = ($('lg-name').value||'').trim();
+  const pwd = $('lg-pwd').value||'';
+  if(!/^1\d{10}$/.test(phone)) return showMsg('<div class="warnbox">请输入正确的11位手机号</div>');
+  const users = getUsers(); const u = users[phone];
+  if(!u) return showMsg('<div class="warnbox">该手机号未注册，请先点「注册新账号」</div>');
+  if(hashPwd(pwd, u.salt) !== u.pwd) return showMsg('<div class="warnbox">密码不正确</div>');
+  if(name && name !== u.name) return showMsg('<div class="warnbox">用户名与该账号不一致（该账号用户名为：'+u.name+'）</div>');
+  migrateLegacy(phone);
+  enterApp(phone, u.name);
+}
+function enterApp(phone, name){
+  window.__curUser = phone;
+  localStorage.setItem('fitagent_current', phone);
+  $('login-mask').classList.add('hide');
+  $('userbar').classList.remove('hide');
+  $('userbar').innerHTML = '<span><svg class="ic" style="vertical-align:-3px"><use href="#i-card"/></svg> ' + name + '（' + phone + '）</span>'
+    + '<button class="btn sec sm" onclick="doLogout()">退出登录</button>';
+  loadProfile(); buildRecInputs(); renderRecords();
+}
+function doLogout(){
+  saveProfile();
+  window.__curUser = null;
+  localStorage.setItem('fitagent_current', '');
+  $('login-mask').classList.remove('hide');
+  $('userbar').classList.add('hide');
+  $('lg-pwd').value = '';
+  showMsg('<div class="tip">已退出登录，你的数据已保存在本机</div>');
+}
+function saveProfile(){
+  if(!window.__curUser) return;
+  const p = getProfile();
+  localStorage.setItem(profKey(), JSON.stringify({
+    grade:p.grade, gender:p.gender, height:p.height, weight:p.weight,
+    target:p.target, date:p.date, spec:p.spec, track:p.track
+  }));
+}
+function loadProfile(){
+  if(!window.__curUser) return;
+  let d = null;
+  try{ d = JSON.parse(localStorage.getItem(profKey())||'null'); }catch(e){}
+  if(!d) return;
+  if(d.grade) $('f-grade').value = d.grade;
+  if(d.gender) $('f-gender').value = d.gender;
+  if(d.height != null) $('f-height').value = d.height;
+  if(d.weight != null) $('f-weight').value = d.weight;
+  if(d.target != null) $('f-target').value = d.target;
+  if(d.date) $('f-date').value = d.date;
+  if(d.spec != null) $('f-spec').value = d.spec;
+  if(d.track){
+    track = d.track;
+    document.querySelectorAll('#track-pills .pill').forEach(x=>x.classList.toggle('on', x.dataset.v === d.track));
+  }
+  $('spec-box').classList.toggle('hide', !getProfile().hasSpec);
+  buildInputs(); buildRecInputs(); renderSkills(); renderTipVideos(); renderTipTexts(); updateBMIHint();
+}
+function migrateLegacy(phone){
+  const old = localStorage.getItem('fitagent_records');
+  if(old && old !== '[]' && !localStorage.getItem('fitagent_u_'+phone+'_records')){
+    localStorage.setItem('fitagent_u_'+phone+'_records', old);
+  }
+}
+function bootUser(){
+  const saved = localStorage.getItem('fitagent_current');
+  const users = getUsers();
+  if(saved && users[saved]) enterApp(saved, users[saved].name);
+}
+bootUser();
+</script>
+</body>
+</html>
